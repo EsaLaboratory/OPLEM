@@ -1,0 +1,11 @@
+numba
+numpy
+pandapower
+pandas
+PICOS
+scikit-learn
+scipy
+spyder
+spyder-kernels
+cvxopt
+matplotlib
