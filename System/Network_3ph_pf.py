@@ -327,7 +327,7 @@ class Network_3ph:
             self.Jabs_dPQwye_list.append(Jabs_dPQwye)
             self.Jabs_dPQdel_list.append(Jabs_dPQdel)
             self.Jabs_I0_list.append(Jabs0)
-            
+            #just to test
             
     def linear_pf(self):
         """
