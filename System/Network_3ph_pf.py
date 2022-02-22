@@ -292,8 +292,12 @@ class Network_3ph:
                     ==line_ij_df['busB']]['number'].values[0]-1
             E_i = np.zeros([3,3*(self.N_buses-1)])
             E_j = np.zeros([3,3*(self.N_buses-1)])
-            v_i_abc = v_net_lin0[3*(bus_i+1):3*(bus_i+2)]
-            v_j_abc = v_net_lin0[3*(bus_j+1):3*(bus_j+2)] 
+            
+            M0_net = np.concatenate([np.zeros(3), self.M0])
+
+            v_i_abc = M0_net[3*(bus_i+1):3*(bus_i+2)]
+            v_j_abc = M0_net[3*(bus_j+1):3*(bus_j+2)]
+            
             if bus_i >= 0:
                 E_i[:,3*bus_i:3*(bus_i+1)] = np.eye(3)
             if bus_j >= 0:
