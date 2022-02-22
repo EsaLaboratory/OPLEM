@@ -379,6 +379,40 @@ class Network_3ph:
                             + np.matmul(self.K_del,PQ_del) + self.K0
         self.v_net_lin_abs_res = \
             np.concatenate((np.abs(self.vs),self.v_lin_abs_res))
+        
+        # perform a linear i calculation
+        i_lin_res = []
+        i_lin_abs_res = []
+        for line_ij in range(self.N_lines):
+            i_lin_res_ij = np.matmul(self.J_dPQwye_list[line_ij],PQ_wye) \
+                          + np.matmul(self.J_dPQdel_list[line_ij], PQ_del) \
+                          + self.J_I0_list[line_ij]
+            i_lin_res.append(i_lin_res_ij)
+
+            i_lin_abs_res_ij = np.matmul(self.Jabs_dPQwye_list[line_ij], PQ_wye) \
+                              + np.matmul(self.Jabs_dPQdel_list[line_ij], PQ_del) \
+                              + self.Jabs_I0_list[line_ij]
+            i_lin_abs_res.append(i_lin_abs_res_ij)
+
+        i_lin_res = np.concatenate(i_lin_res)
+        i_lin_abs_res = np.concatenate(i_lin_abs_res)
+
+        self.i_lin_res = i_lin_res
+        self.i_lin_abs_res = i_lin_abs_res
+
+        # perform a linear complex power calculation at the slack bus
+        self.Ss = np.matmul(self.G_wye, PQ_wye) \
+                  + np.matmul(self.G_del, PQ_del) + self.G0
+
+        # calculate the active power
+        self.Ps = np.matmul(np.real(self.G_wye), PQ_wye) \
+                  + np.matmul(np.real(self.G_del), PQ_del) + np.real(self.G0)
+
+        # calculate the reactive power
+        self.Qs = np.matmul(np.imag(self.G_wye), PQ_wye) \
+                  + np.matmul(np.imag(self.G_del), PQ_del) + np.imag(self.G0)
+
+        self.Ss /= 1e3
 
 
     def zbus_pf(self):
