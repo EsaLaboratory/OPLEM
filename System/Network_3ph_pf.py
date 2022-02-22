@@ -23,6 +23,8 @@ def strCpx2cpx(X):
     for x in X:
         X[i] = complex(x)
         i+=1
+        
+    print('a new function')
     return X
 
 class Network_3ph:
