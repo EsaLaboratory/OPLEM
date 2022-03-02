@@ -223,7 +223,7 @@ time_ems = dt_ems*np.arange(T_ems)
 timeE = dt*np.arange(T+1)
 
 #Print revenue generated
-revenue = market.calculate_revenue(-Pnet_market,dt)
+revenue = market.calculate_revenue(Pnet_market,dt)
 print('Net Revenue: £ ' + str(revenue) )
 
 #Plot the base demand and the total imported power
