@@ -945,7 +945,7 @@ class Network_3ph:
 
         """        
         self.N_buses = 13
-        self.N_lines = 12
+        self.N_lines = 10
         self.N_phases = 3
         #Create buses dataframe
         bus_columns = ['name','number','load_type','connect',\
