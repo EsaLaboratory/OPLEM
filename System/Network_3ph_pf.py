@@ -945,7 +945,7 @@ class Network_3ph:
 
         """        
         self.N_buses = 13
-        self.N_lines = 12
+        self.N_lines = 10
         self.N_phases = 3
         #Create buses dataframe
         bus_columns = ['name','number','load_type','connect',\
@@ -963,11 +963,11 @@ class Network_3ph:
         self.bus_df.iloc[2]= \
                 {'name':'645','number':2, 
                  'v_base': self.Vslack_ph, 'load_type':'PQ','connect':'Y',
-                 'Pa':  0,'Pb':  0,'Pc':  0,'Qa':  0,'Qb':  0,'Qc':  0}
+                 'Pa':  0,'Pb':  170,'Pc':  0,'Qa':  0,'Qb':  125,'Qc':  0}
         self.bus_df.iloc[3]= \
                 {'name':'646','number':3, 
                  'v_base': self.Vslack_ph, 'load_type':'Z', 'connect':'D',
-                 'Pa':  0,'Pb':  0,'Pc':  0,'Qa':  0,'Qb':  0,'Qc':  0}
+                 'Pa':  0,'Pb':  230,'Pc':  0,'Qa':  0,'Qb':  132,'Qc':  0}
         self.bus_df.iloc[4]= \
                 {'name':'633','number':4,  
                  'v_base': self.Vslack_ph, 'load_type':'PQ','connect':'Y',
@@ -975,11 +975,11 @@ class Network_3ph:
         self.bus_df.iloc[5]= \
                 {'name':'634','number':5,  
                  'v_base': self.Vslack_ph, 'load_type':'PQ','connect':'Y',
-                 'Pa':  0,'Pb':  0,'Pc':  0,'Qa':  0,'Qb':  0,'Qc':  0}
+                 'Pa':  160,'Pb':  120,'Pc':  120,'Qa':  110,'Qb':  90,'Qc':  90}
         self.bus_df.iloc[6]= \
                 {'name':'671','number':6,  
                  'v_base': self.Vslack_ph, 'load_type':'PQ','connect':'D',
-                 'Pa':  0,'Pb':  0,'Pc':  0,'Qa':  0,'Qb':  0,'Qc':  0}
+                 'Pa':  385,'Pb':  385,'Pc':  385,'Qa':  220,'Qb':  220,'Qc':  220}
         self.bus_df.iloc[7]= \
                 {'name':'680','number':7,  
                  'v_base': self.Vslack_ph, 'load_type':'PQ','connect':'Y',
@@ -991,19 +991,19 @@ class Network_3ph:
         self.bus_df.iloc[9]= \
                 {'name':'611','number':9,  
                  'v_base': self.Vslack_ph, 'load_type':'I', 'connect':'Y',
-                 'Pa':  0,'Pb':  0,'Pc':  0,'Qa':  0,'Qb':  0,'Qc':  0}
+                 'Pa':  0,'Pb':  0,'Pc':  170,'Qa':  0,'Qb':  0,'Qc':  80}
         self.bus_df.iloc[10]=\
                 {'name':'652','number':10, 
                  'v_base': self.Vslack_ph, 'load_type':'Z', 'connect':'Y',
-                 'Pa':  0,'Pb':  0,'Pc':  0,'Qa':  0,'Qb':  0,'Qc':  0}
+                 'Pa':  128,'Pb':  0,'Pc':  0,'Qa':  86,'Qb':  0,'Qc':  0}
         self.bus_df.iloc[11]=\
                 {'name':'692','number':11, 
                  'v_base': self.Vslack_ph, 'load_type':'I', 'connect':'D',
-                 'Pa':  0,'Pb':  0,'Pc':  0,'Qa':  0,'Qb':  0,'Qc':  0}
+                 'Pa':  0,'Pb':  0,'Pc':  170,'Qa':  0,'Qb':  0,'Qc':  151}
         self.bus_df.iloc[12]=\
                 {'name':'675','number':12, 
                  'v_base': self.Vslack_ph, 'load_type':'PQ','connect':'Y',
-                 'Pa':  0,'Pb':  0,'Pc':  0,'Qa':  0,'Qb':  0,'Qc':  0}
+                 'Pa':  485,'Pb':  68,'Pc':  290,'Qa':  190,'Qb':  60,'Qc':  212}
         #Create line configuration data frame
         line_config_col = ['name','Zaa','Zbb','Zcc','Zab','Zac','Zbc',
                            'Baa','Bbb','Bcc','Bab','Bac','Bbc']
