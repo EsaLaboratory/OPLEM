@@ -514,7 +514,7 @@ class NondispatchableAsset_3ph(Asset_3ph):
 
     """
 
-    def __init__(self, Pnet, Qnet, bus_id, phases, dt, T, Pnet_pred=None,
+    def __init__(self, Pnet, Qnet, bus_id, phases, dt, T, dt_ems, T_ems, Pnet_pred=None,
                  Qnet_pred=None):
         Asset_3ph.__init__(self, bus_id, phases, dt, T)
         self.Pnet = Pnet
