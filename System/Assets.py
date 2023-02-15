@@ -103,7 +103,7 @@ class BuildingAsset(Asset):
     """
     def __init__(self, Tmax, Tmin, Hmax, Cmax, T0, C, R, CoP_heating, CoP_cooling, Ta, bus_id, dt,
                  T, dt_ems, T_ems):
-        Asset.__init__(self, bus_id, dt, T)
+        Asset.__init__(self, bus_id, dt, T, phases=phases)
         self.Tmax = Tmax
         self.Tmin = Tmin
         self.Hmax = Hmax
