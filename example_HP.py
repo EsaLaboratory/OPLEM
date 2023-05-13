@@ -77,7 +77,7 @@ pv_i.Pnet_pred = pv_i.Pnet
 assets.append(pv_i)
 
 batt_i = AS.StorageAsset(8*np.ones(T_ems), np.zeros(T_ems),4*np.ones(T_ems), 4*np.ones(T_ems), 4, 4, 1, dt, T, dt_ems, T_ems, c_deg_lin = 0.05)
-assets.append(batt_i)
+#assets.append(batt_i)
 
 Tmax_bldg_i = Tmax*np.ones(T_ems)
 Tmin_bldg_i = Tmin*np.ones(T_ems)
