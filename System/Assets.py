@@ -312,7 +312,7 @@ class BuildingAsset(Asset):
         Ta_discount[0] = self.Ta_ems[t0] #
         for t in range(1,self.T_ems-t0): #-t0 added for receiding horizon
             ### Sigma_t=1^j alpha**(j-t)*Ta[t]
-            Ta_discount[t] = np.dot(Gamma[t-1, :t],self.Ta_ems[t0:t0+t])  
+            Ta_discount[t] = np.dot(Gamma[t, :t+1],self.Ta_ems[t0:t0+t+1])  
             #Ta_discount[t] = np.dot(Gamma[t-1, :t],self.Ta_ems[t0:t0+t]) this works better but it's WRONG !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         T0_discount = self.alpha*self.T0*np.flip(Gamma[-1]) #T0*[alpha, ...., alpha^Tems]
