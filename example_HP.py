@@ -77,7 +77,7 @@ pv_i.Pnet_pred = pv_i.Pnet
 assets.append(pv_i)
 
 batt_i = AS.StorageAsset(8*np.ones(T_ems), np.zeros(T_ems),4*np.ones(T_ems), -4*np.ones(T_ems), 4, 4, 1, dt, T, dt_ems, T_ems, c_deg_lin = 0.05)
-#assets.append(batt_i)
+assets.append(batt_i)
 
 Tmax_bldg_i = Tmax*np.ones(T_ems)
 Tmin_bldg_i = Tmin*np.ones(T_ems)
@@ -123,20 +123,21 @@ P = pic.RealVariable('P',2*T_ems)
 A, b = hp.polytope()
 prob.add_constraint(A*P <= b)
 ### decomment if to consider battery
-"""
+
 Pb = pic.RealVariable('Pb',2*T_ems)
 Ab, bb =es.polytope(0)
 prob.add_constraint(Ab*Pb <= bb)
-"""
+
 prob.add_constraint( Pimp >= 0)
 prob.add_constraint( Pexp >= 0)
 ####### 2 following lines should be replaced by the 2 that come after if considering battery
+"""
 prob.add_constraint(Pimp - Pexp == P_demand + P[: T_ems] + P[T_ems:]  )
 prob.set_objective('min', dt_ems*TOUP1.T*Pimp -dt_ems*FiT1.T*Pexp  )
 """
 prob.add_constraint(Pimp - Pexp == P_demand + P[: T_ems] + P[T_ems:] + Pb[: T_ems] + Pb[T_ems:] )
 prob.set_objective('min', dt_ems*TOUP1.T*Pimp -dt_ems*FiT1.T*Pexp +dt_ems*es.c_deg_lin*sum(Pb[t] - Pb[t+T_ems] for t in range(T_ems) ) )
-"""
+
 prob.solve(solver='gurobi')  #)
 hp.update_ems(P.value[:T_ems]-P.value[T_ems:], enforce_const=False)
 Thp[:, 0] = hp.Tin_ems
@@ -153,11 +154,11 @@ Pexp = pic.RealVariable('Pexp', T_ems)
 P_cool = pic.RealVariable('P_cool',T_ems)
 P_heat = pic.RealVariable('P_heat',T_ems)
 T_in = pic.RealVariable('T_in',T_ems)
-"""
+
 Pb = pic.RealVariable('Pb',2*T_ems)
 Ab, bb =es.polytope()
 prob.add_constraint(Ab*Pb <= bb)
-"""
+
 prob.add_constraint(P_cool >= 0 )
 prob.add_constraint(P_cool <= hp.Cmax )
 prob.add_constraint(P_heat >= 0 )
@@ -169,12 +170,12 @@ prob.add_constraint(T_in >= hp.Tmin )
 prob.add_constraint(T_in <= hp.Tmax )
 prob.add_constraint( Pimp >= 0)
 prob.add_constraint( Pexp >= 0)
+"""
 prob.add_constraint(Pimp - Pexp == P_demand + P_cool + P_heat )
 prob.set_objective('min', dt_ems*TOUP1.T*Pimp -dt_ems*FiT1.T*Pexp )
 """
 prob.add_constraint(Pimp - Pexp == P_demand + P_cool + P_heat + Pb[: T_ems] + Pb[T_ems:])
 prob.set_objective('min', dt_ems*TOUP1.T*Pimp -dt_ems*FiT1.T*Pexp +dt_ems*es.c_deg_lin*sum(Pb[t] - Pb[t+T_ems] for t in range(T_ems) ) )
-"""
 
 prob.solve(solver='gurobi')  #)
 
