@@ -30,11 +30,9 @@ T_ems = int(24/dt_ems)
 ### STEP 0: Load Data
 #######################################
 ### 2) Load Data
-parent_path = "C:\\Users\\cessayeh\\Anaconda3\\envs\\epymarl\\Lib\\site-packages\\gym\\envs\\OPEN_env\\Data"
-Loads_data_path = os.path.join(parent_path, "Load1min.npy")  
-Loads = np.load(Loads_data_path).astype(float)
-N_loads_raw = Loads.shape[1]
-Load_ems = Loads.transpose().reshape(-1,int(dt_ems/dt_raw)).mean(1).reshape(N_loads_raw,-1).transpose()
+Load_ems = np.load("Data\\Loads30min.npy").astype(float)
+#N_loads_raw = Loads.shape[1]
+#Load_ems = Loads.transpose().reshape(-1,int(dt_ems/dt_raw)).mean(1).reshape(N_loads_raw,-1).transpose()
 Load_ems = np.nan_to_num(Load_ems, nan= np.nanmean(Load_ems)) #(np.max(Load_ems)-np.min(Load_ems))*np.random.rand(1)+np.min(Load_ems)
 Load_ems = np.concatenate((Load_ems, Load_ems), axis=1)
 #######################################
