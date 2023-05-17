@@ -15,6 +15,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.linalg import block_diag
 import sys, os, time
+import copy
 
 __version__ = "1.0.0"
 
@@ -271,6 +272,14 @@ class Network_3ph:
                                 np.real(np.matmul(v_lin0_diag,self.M_del)))
         self.K0 = np.abs(v_lin0) - np.matmul(self.K_wye,PQ_wye_lin0) \
                                     - np.matmul(self.K_del,PQ_del_lin0)
+
+        # liner s0 model = G_wye*x + G_del*x + G0 where x = (p1,...,pN,q1,...,qN)
+        self.G_wye = np.matmul(np.diag(self.vs), np.matmul(np.conj(self.Ysn), np.conj(self.M_wye)))
+        self.G_del = np.matmul(np.diag(self.vs), np.matmul(np.conj(self.Ysn), np.conj(self.M_del)))
+        self.G0 = np.matmul(np.diag(self.vs), \
+                            np.matmul(np.conj(self.Yss), np.conj(self.vs)) \
+                            + np.matmul(np.conj(self.Ysn), np.conj(self.M0)))
+
         #Linear line current model
         #   i_ij = J_dPQwye*dx + J_dPQdel*dx 
         #           + J_I0 (J_wye*x0 + J_del*x0 + J0) and 
@@ -292,12 +301,14 @@ class Network_3ph:
                     ==line_ij_df['busB']]['number'].values[0]-1
             E_i = np.zeros([3,3*(self.N_buses-1)])
             E_j = np.zeros([3,3*(self.N_buses-1)])
-            
+
+            ### below is the correction by Yihong
             M0_net = np.concatenate([np.zeros(3), self.M0])
 
             v_i_abc = M0_net[3*(bus_i+1):3*(bus_i+2)]
             v_j_abc = M0_net[3*(bus_j+1):3*(bus_j+2)]
-            
+            ### correction end
+
             if bus_i >= 0:
                 E_i[:,3*bus_i:3*(bus_i+1)] = np.eye(3)
             if bus_j >= 0:
@@ -309,10 +320,21 @@ class Network_3ph:
             J_dPQdel = np.matmul(np.matmul(Yshunt+Yseries,E_i)
                             -np.matmul(Yseries,E_j),self.M_del)
             J_I0 = np.matmul(Yshunt+Yseries,v_i_abc)-np.matmul(Yseries,v_j_abc)
+
+            # below is the correction bu Yihong (do not use it)
+            # J_I0 = np.matmul(np.matmul(Yshunt+Yseries,E_i)
+            #                 -np.matmul(Yseries,E_j),self.M0)
+
             self.J_dPQwye_list.append(J_dPQwye)
             self.J_dPQdel_list.append(J_dPQdel)
             self.J_I0_list.append(J_I0)
             i_ij_lin0 = J_I0
+            ### Yihong Modification
+            # i_ij_lin0 = np.matmul(self.J_dPQwye_list[line_ij], PQ_wye) \
+            #             + np.matmul(self.J_dPQdel_list[line_ij], PQ_del) \
+            #             + self.J_I0_list[line_ij]
+            ### Yihong Modification end
+
             i_ij_lin0_inv_diag = np.zeros([i_ij_lin0.size,i_ij_lin0.size],
                                           dtype=np.complex_)
             i_ij_lin0_conj_diag = np.zeros([i_ij_lin0.size,i_ij_lin0.size],
@@ -320,14 +342,24 @@ class Network_3ph:
             for ph_index in range(i_ij_lin0.size):
                 if np.abs(i_ij_lin0[ph_index]) > 0:
                     i_ij_lin0_inv_diag[ph_index,ph_index] \
-                                                = 1/np.abs(i_ij_lin0[ph_index])
+                                                = 1/i_ij_lin0[ph_index] # Yihong Slight Modification, remove abs here;original is 1/np.abs(i_ij_lin0[ph_index])
                     i_ij_lin0_conj_diag[ph_index,ph_index] \
                                                 = np.conj(i_ij_lin0[ph_index])
-            Jabs_dPQwye = np.matmul(i_ij_lin0_inv_diag,
+
+            ### The original version
+            # Jabs_dPQwye = np.matmul(i_ij_lin0_inv_diag,
+            #                         np.real(np.matmul(i_ij_lin0_conj_diag, J_dPQwye)))
+            # Jabs_dPQdel = np.matmul(i_ij_lin0_inv_diag,
+            #                         np.real(np.matmul(i_ij_lin0_conj_diag, J_dPQdel)))
+            # Jabs0 = np.abs(i_ij_lin0)
+
+            # Yihong Modification
+            Jabs_dPQwye = np.matmul(np.abs(i_ij_lin0_inv_diag),
                             np.real(np.matmul(i_ij_lin0_conj_diag,J_dPQwye)))
-            Jabs_dPQdel = np.matmul(i_ij_lin0_inv_diag,
+            Jabs_dPQdel = np.matmul(np.abs(i_ij_lin0_inv_diag),
                             np.real(np.matmul(i_ij_lin0_conj_diag,J_dPQdel)))
             Jabs0 = np.abs(i_ij_lin0)
+            # Modification END
             self.Jabs_dPQwye_list.append(Jabs_dPQwye)
             self.Jabs_dPQdel_list.append(Jabs_dPQdel)
             self.Jabs_I0_list.append(Jabs0)
@@ -370,6 +402,9 @@ class Network_3ph:
                 S_PQ_del[cph_index] = S_loads[cph_index] #[Scb]        
         PQ_wye = np.concatenate([np.real(S_PQ_wye),np.imag(S_PQ_wye)])
         PQ_del = np.concatenate([np.real(S_PQ_del),np.imag(S_PQ_del)])
+        PQ_wye = np.nan_to_num(PQ_wye)
+        PQ_del = np.nan_to_num(PQ_del)
+
         #Perform a linear v calculation
         self.v_lin_res = np.matmul(self.M_wye,PQ_wye) \
                             + np.matmul(self.M_del,PQ_del) + self.M0
@@ -379,7 +414,8 @@ class Network_3ph:
                             + np.matmul(self.K_del,PQ_del) + self.K0
         self.v_net_lin_abs_res = \
             np.concatenate((np.abs(self.vs),self.v_lin_abs_res))
-        
+
+        #below are added by Yihong
         # perform a linear i calculation
         i_lin_res = []
         i_lin_abs_res = []
@@ -415,6 +451,315 @@ class Network_3ph:
         self.Ss /= 1e3
 
 
+    def get_parameters(self, assets_nd, assets_flex, t_ems, t0):
+
+        if len(assets_nd):
+            T = assets_nd[0].T
+            dt = assets_nd[0].dt
+            T_ems = assets_nd[0].T_ems
+            dt_ems = assets_nd[0].dt_ems
+        elif len(assets_flex):
+            T = assets_flex[0].T
+            dt = assets_flex[0].dt
+            T_ems = assets_flex[0].T_ems
+            dt_ems = assets_flex[0].dt_ems
+
+        #Assemble P_demand out of P actual and P predicted and convert to EMS time series scale
+        P_demand = np.zeros([T_ems-t0,len(assets_nd)])
+        Q_demand = np.zeros([T_ems-t0,len(assets_nd)])
+        for i in range(len(assets_nd)):
+            if t_ems == t0:
+                P_demand[t_ems-t0, i] = np.mean(assets_nd[i].Pnet[t_ems*int(dt_ems/dt) : (t_ems+1)*int(dt_ems/dt)])
+                Q_demand[t_ems-t0, i] = np.mean(assets_nd[i].Qnet[t_ems*int(dt_ems/dt) : (t_ems+1)*int(dt_ems/dt)])
+            else:
+                P_demand[t_ems-t0, i] = np.mean(assets_nd[i].Pnet_pred[t_ems*int(dt_ems/dt) : (t_ems+1)*int(dt_ems/dt)])
+                Q_demand[t_ems-t0, i] = np.mean(assets_nd[i].Qnet_pred[t_ems*int(dt_ems/dt) : (t_ems+1)*int(dt_ems/dt)])
+
+        #Set up Matrix linking nondispatchable assets to their bus and phase
+        G_wye_nondispatch,  G_del_nondispatch = self.get_Gs(assets_nd) #nondispatch
+        #Set up Matrix linking energy storage assets to their bus and phase
+        G_wye_ES, G_del_ES = self.get_Gs(assets_flex)
+        #PQ Gs
+        G_wye_nondispatch_PQ = np.concatenate((G_wye_nondispatch, G_wye_nondispatch),axis=0)
+        G_del_nondispatch_PQ = np.concatenate((G_del_nondispatch, G_del_nondispatch),axis=0)
+        G_wye_ES_PQ = np.concatenate((G_wye_ES,G_wye_ES),axis=0)
+        G_del_ES_PQ = np.concatenate((G_del_ES,G_del_ES),axis=0)
+
+        P_lin_buses = np.zeros([self.N_buses,self.N_phases])
+        Q_lin_buses = np.zeros([self.N_buses,self.N_phases])
+        
+        #Setup linear power flow model:
+        for i in range(len(assets_nd)):
+            bus_id = assets_nd[i].bus_id
+            phases_i = assets_nd[i].phases
+            for ph_i in np.nditer(phases_i):
+                bus_ph_index = 3*(bus_id-1) + ph_i
+                P_lin_buses[bus_id,ph_i] +=\
+                (G_wye_nondispatch[bus_ph_index,i]+\
+                 G_del_nondispatch[bus_ph_index,i])*P_demand[t_ems-t0, i]
+                #print('G_wye_nondispatch[bus_ph_index,i]', G_wye_nondispatch[bus_ph_index,i], 'G_del_nondispatch[bus_ph_index,i]', G_del_nondispatch[bus_ph_index,i])
+                Q_lin_buses[bus_id,ph_i] +=\
+                (G_wye_nondispatch[bus_ph_index,i]+\
+                 G_del_nondispatch[bus_ph_index,i])*Q_demand[t_ems-t0, i]
+
+        #set up a copy of the network for MPC interval t
+        network_t = copy.deepcopy(self)#.network)
+        network_t.clear_loads()  #self.clear
+        for bus_id in range(self.N_buses):
+            for ph_i in range(self.N_phases):
+                Pph_t = P_lin_buses[bus_id,ph_i]
+                Qph_t = Q_lin_buses[bus_id,ph_i]
+                #add P,Q loads to the network copy
+                network_t.set_load(bus_id,ph_i,Pph_t,Qph_t) #self.
+
+        network_t.zbus_pf()
+        network_t.linear_model_setup(network_t.v_net_res, network_t.S_PQloads_wye_res, network_t.S_PQloads_del_res)
+        # note that phases need to be 120degrees out for good results
+        network_t.linear_pf()
+
+
+        # Note that linear power flow matricies are in units of W (not kW)
+        PQ0_wye = np.concatenate((np.real(network_t.S_PQloads_wye_res),\
+                                  np.imag(network_t.S_PQloads_wye_res)))\
+                                  *1e3
+        PQ0_del = np.concatenate((np.real(network_t.S_PQloads_del_res),\
+                                  np.imag(network_t.S_PQloads_del_res)))\
+                                  *1e3
+        A_Pslack_flex = (np.matmul\
+                    (np.real(np.matmul\
+                             (network_t.vs.T,\
+                              np.matmul(np.conj(network_t.Ysn),\
+                                        np.conj(network_t.M_wye)))),\
+                                  G_wye_ES_PQ)\
+                     + np.matmul\
+                     (np.real(np.matmul\
+                              (network_t.vs.T,\
+                               np.matmul(np.conj(network_t.Ysn),\
+                                         np.conj(network_t.M_del)))),\
+                                  G_del_ES_PQ))
+
+        A_Pslack_nd = (np.matmul\
+                    (np.real(np.matmul\
+                             (network_t.vs.T,\
+                              np.matmul(np.conj(network_t.Ysn),\
+                                        np.conj(network_t.M_wye)))),\
+                                  G_wye_nondispatch_PQ)\
+                     + np.matmul\
+                     (np.real(np.matmul\
+                              (network_t.vs.T,\
+                               np.matmul(np.conj(network_t.Ysn),\
+                                         np.conj(network_t.M_del)))),\
+                                  G_del_nondispatch_PQ))
+
+        b_Pslack =  np.real(np.matmul\
+                            (network_t.vs.T,\
+                             np.matmul(np.conj\
+                                       (network_t.Ysn),\
+                                       np.matmul(np.conj\
+                                                 (network_t.M_wye),\
+                                                 PQ0_wye))))\
+                    +np.real(np.matmul\
+                             (network_t.vs.T,\
+                              np.matmul(np.conj\
+                                        (network_t.Ysn),\
+                                        np.matmul(np.conj\
+                                                  (network_t.M_del),
+                                                  PQ0_del))))\
+                    +np.real(np.matmul\
+                             (network_t.vs.T,\
+                              (np.matmul(np.conj\
+                                         (network_t.Yss),\
+                                         np.conj(network_t.vs))\
+                             + np.matmul(np.conj\
+                                         (network_t.Ysn),\
+                                         np.conj(network_t.M0)))))
+
+        
+        # Voltage magnitude constraints
+        A_vlim_flex = np.matmul(network_t.K_wye,G_wye_ES_PQ)\
+                + np.matmul(network_t.K_del,G_del_ES_PQ)
+        A_vlim_nd = np.matmul(network_t.K_wye,G_wye_nondispatch_PQ)\
+                + np.matmul(network_t.K_del,G_del_nondispatch_PQ)
+        b_vlim = network_t.v_lin_abs_res
+
+        #get max/min bus voltages, removing slack and reshaping in a column
+        v_abs_max_vec = network_t.v_abs_max[1:,:].reshape(-1,1)
+        v_abs_min_vec = network_t.v_abs_min[1:,:].reshape(-1,1)
+
+        # current 
+        A_lines_flex, A_line_wye_flex, A_line_del_flex, A_lines_nd, A_line_wye_nd, A_line_del_nd  = [], [], [], [], [], []
+        for line_ij in range(self.N_lines):
+                #if line_ij not in i_unconstrained_lines:
+                iabs_max_line_ij = network_t.i_abs_max[line_ij,:] #3 phases
+                # maximum current magnitude constraint
+                A_line_flex = np.matmul(network_t.Jabs_dPQwye_list[line_ij],\
+                                   G_wye_ES_PQ)\
+                                   + np.matmul(network_t.\
+                                               Jabs_dPQdel_list[line_ij],\
+                                               G_del_ES_PQ)
+                A_lines_flex.append(A_line_flex)
+                A_line_wye_flex.append(np.matmul(network_t.Jabs_dPQwye_list[line_ij],G_wye_ES_PQ))
+                A_line_del_flex.append(np.matmul(network_t.Jabs_dPQdel_list[line_ij],G_del_ES_PQ))
+
+                A_line_nd = np.matmul(network_t.Jabs_dPQwye_list[line_ij],\
+                                   G_wye_nondispatch_PQ)\
+                                   + np.matmul(network_t.\
+                                               Jabs_dPQdel_list[line_ij],\
+                                               G_del_nondispatch_PQ)
+                A_lines_nd.append(A_line_nd)
+                A_line_wye_nd.append(np.matmul(network_t.Jabs_dPQwye_list[line_ij],G_wye_nondispatch_PQ))
+                A_line_del_nd.append(np.matmul(network_t.Jabs_dPQdel_list[line_ij],G_del_nondispatch_PQ))
+
+        
+        
+        A_Pslack_wye_flex = np.matmul(np.real(np.matmul(network_t.vs.T,\
+                                                              np.matmul(np.conj(network_t.Ysn),\
+                                                              np.conj(network_t.M_wye)))),G_wye_ES_PQ)
+        A_Pslack_del_flex = np.matmul(np.real(np.matmul (network_t.vs.T,\
+                                                                          np.matmul(np.conj(network_t.Ysn),\
+                                                                          np.conj(network_t.M_del)))), G_del_ES_PQ)
+        
+        A_vlim_wye_flex = np.matmul(network_t.K_wye,G_wye_ES_PQ)
+        A_vlim_del_flex = np.matmul(network_t.K_del,G_del_ES_PQ)
+        
+        A_Pslack_wye_nd = np.matmul(np.real(np.matmul(network_t.vs.T,\
+                                                              np.matmul(np.conj(network_t.Ysn),\
+                                                              np.conj(network_t.M_wye)))),G_wye_nondispatch_PQ)
+        A_Pslack_del_nd = np.matmul(np.real(np.matmul (network_t.vs.T,\
+                                                                          np.matmul(np.conj(network_t.Ysn),\
+                                                                          np.conj(network_t.M_del)))), G_del_nondispatch_PQ)
+        
+        A_vlim_wye_nd = np.matmul(network_t.K_wye,G_wye_nondispatch_PQ)
+        A_vlim_del_nd = np.matmul(network_t.K_del,G_del_nondispatch_PQ)
+        
+        
+        return A_Pslack_flex, A_Pslack_nd, b_Pslack, A_vlim_flex, A_vlim_nd, b_vlim, v_abs_min_vec, v_abs_max_vec, A_lines_flex, A_lines_nd,\
+               A_Pslack_wye_flex, A_Pslack_del_flex, A_vlim_wye_flex, A_vlim_del_flex, A_line_wye_flex, A_line_del_flex, \
+               A_Pslack_wye_nd, A_Pslack_del_nd, A_vlim_wye_nd, A_vlim_del_nd, A_line_wye_nd, A_line_del_nd
+        
+        #return A_Pslack, b_Pslack, 0, 0, 0, 0, 0, A_Pslack_wye, A_Pslack_del, 0, 0, 0, 0
+
+        
+    def get_Gs(self, assets):
+        """
+        Set up matrices G_wye and G_del linking a group of assets to their bus and phase
+        Returns
+        -----------
+        G_wye: numpy.ndarray (no unit)
+            size (3*(N_buses-1),nbr of assets)
+        G_del: numpy.ndarray (no unit)
+            size (3*(N_buses-1),nbr of assets)
+        """
+        N_buses = self.N_buses
+        N_phases = self.N_phases
+        G_wye = np.zeros([3*(N_buses-1),len(assets)])
+        G_del = np.zeros([3*(N_buses-1),len(assets)])
+        for i in range(len(assets)):
+            asset_N_phases = assets[i].phases.size
+            bus_id = assets[i].bus_id
+            # check if Wye connected
+            wye_flag = self.bus_df[self.bus_df['number']==\
+                                           bus_id]['connect'].values[0]=='Y'
+            for ph in np.nditer(assets[i].phases):
+                bus_ph_index = 3*(bus_id-1) + ph
+                if wye_flag is True:
+                    G_wye[bus_ph_index,i] = 1/asset_N_phases
+                else:
+                    G_del[bus_ph_index,i] = 1/asset_N_phases
+        return G_wye, G_del
+
+    def get_linear_parameters(self, assets_nd, t):
+        P_lin_buses = np.zeros([self.N_buses,self.N_phases])
+        Q_lin_buses = np.zeros([self.N_buses,self.N_phases])    
+        G_wye_nondispatch,  G_del_nondispatch = self.get_Gs(assets_nd)
+        G_wye_nondispatch_PQ = np.concatenate((G_wye_nondispatch, G_wye_nondispatch),axis=0)
+        G_del_nondispatch_PQ = np.concatenate((G_del_nondispatch, G_del_nondispatch),axis=0)
+
+        #Setup linear power flow model:
+        for i in range(len(assets_nd)):
+            bus_id = assets_nd[i].bus_id
+            phases_i = assets_nd[i].phases
+            for ph_i in np.nditer(phases_i):
+                bus_ph_index = 3*(bus_id-1) + ph_i
+                P_lin_buses[bus_id,ph_i] +=\
+                (G_wye_nondispatch[bus_ph_index,i]+\
+                 G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Pnet_ems[t]
+                Q_lin_buses[bus_id,ph_i] +=\
+                (G_wye_nondispatch[bus_ph_index,i]+\
+                 G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Qnet_ems[t]
+
+        #set up a copy of the network for MPC interval t
+        network_t = copy.deepcopy(self)#.network)
+        network_t.clear_loads()  #self.clear
+        for bus_id in range(self.N_buses):
+            for ph_i in range(self.N_phases):
+                Pph_t = P_lin_buses[bus_id,ph_i]
+                Qph_t = Q_lin_buses[bus_id,ph_i]
+                #add P,Q loads to the network copy
+                network_t.set_load(bus_id,ph_i,Pph_t,Qph_t) #self.
+
+        network_t.zbus_pf()
+        network_t.linear_model_setup(network_t.v_net_res, network_t.S_PQloads_wye_res, network_t.S_PQloads_del_res)
+        # note that phases need to be 120degrees out for good results
+        network_t.linear_pf()
+
+
+        # Note that linear power flow matricies are in units of W (not kW)
+
+        PQ0_wye = np.concatenate((np.real(network_t.S_PQloads_wye_res),\
+                                  np.imag(network_t.S_PQloads_wye_res)))\
+                                  *1e3
+        PQ0_del = np.concatenate((np.real(network_t.S_PQloads_del_res),\
+                                  np.imag(network_t.S_PQloads_del_res)))\
+                                  *1e3
+        A_Pslack_nd = (np.matmul\
+                    (np.real(np.matmul\
+                             (network_t.vs.T,\
+                              np.matmul(np.conj(network_t.Ysn),\
+                                        np.conj(network_t.M_wye)))),\
+                                  G_wye_nondispatch_PQ)\
+                     + np.matmul\
+                     (np.real(np.matmul\
+                              (network_t.vs.T,\
+                               np.matmul(np.conj(network_t.Ysn),\
+                                         np.conj(network_t.M_del)))),\
+                                  G_del_nondispatch_PQ))
+
+        b_Pslack =  np.real(np.matmul\
+                            (network_t.vs.T,\
+                             np.matmul(np.conj\
+                                       (network_t.Ysn),\
+                                       np.matmul(np.conj\
+                                                 (network_t.M_wye),\
+                                                 PQ0_wye))))\
+                    +np.real(np.matmul\
+                             (network_t.vs.T,\
+                              np.matmul(np.conj\
+                                        (network_t.Ysn),\
+                                        np.matmul(np.conj\
+                                                  (network_t.M_del),
+                                                  PQ0_del))))\
+                    +np.real(np.matmul\
+                             (network_t.vs.T,\
+                              (np.matmul(np.conj\
+                                         (network_t.Yss),\
+                                         np.conj(network_t.vs))\
+                             + np.matmul(np.conj\
+                                         (network_t.Ysn),\
+                                         np.conj(network_t.M0)))))
+
+        
+        # Voltage magnitude constraints
+        A_vlim_nd = np.matmul(network_t.K_wye,G_wye_nondispatch_PQ)\
+                + np.matmul(network_t.K_del,G_del_nondispatch_PQ)
+        b_vlim = network_t.v_lin_abs_res
+
+        #get max/min bus voltages, removing slack and reshaping in a column
+        v_abs_max_vec = network_t.v_abs_max[1:,:].reshape(-1,1)
+        v_abs_min_vec = network_t.v_abs_min[1:,:].reshape(-1,1)
+
+        return A_Pslack_nd, b_Pslack, A_vlim_nd, b_vlim, v_abs_min_vec, v_abs_max_vec
+
     def zbus_pf(self):
         """
         Solves the nonlinear power flow problem using the Z-bus method 
@@ -433,6 +778,12 @@ class Network_3ph:
         S_loads[0::3]=(self.bus_df['Pa']+ self.bus_df['Qa']*1j)[1:].values*1e3
         S_loads[1::3]=(self.bus_df['Pb']+ self.bus_df['Qb']*1j)[1:].values*1e3
         S_loads[2::3]=(self.bus_df['Pc']+ self.bus_df['Qc']*1j)[1:].values*1e3
+
+        S_loads = np.nan_to_num(S_loads)
+
+        #print('S_loads 0 nan:', np.any(np.isnan(S_loads[0::3])))
+        #print('S_loads 1 nan:', np.any(np.isnan(S_loads[1::3])))
+        #print('S_loads 2 nan:', np.any(np.isnan(S_loads[2::3])))
 
         for bus_i in range(1,len(self.bus_df)):
 #            #not including slack bus (bus 0)
@@ -725,7 +1076,8 @@ class Network_3ph:
             Bbc = self.line_df.iloc[line_ij]['Bbc']
             Zseries = np.array([[Zaa,Zab,Zac],[Zab,Zbb,Zbc],[Zac,Zbc,Zcc]])
             phases = [Zaa!=0,Zbb!=0,Zcc!=0]
-            phases_reduced_indexes = [0,int(Zaa!=0),int(Zaa!=0)+int(Zbb!=0)] 
+            phases_reduced_indexes = [0,int(Zaa!=0),int(Zaa!=0)+int(Zbb!=0)]
+
             #i.e. for reduced Y, phase indexes depend on which are present
             Zseries_reduced = Zseries[phases,:][:,phases]
             Yseries_reduced = np.linalg.inv(Zseries_reduced)
@@ -945,7 +1297,7 @@ class Network_3ph:
 
         """        
         self.N_buses = 13
-        self.N_lines = 12
+        self.N_lines = 11
         self.N_phases = 3
         #Create buses dataframe
         bus_columns = ['name','number','load_type','connect',\
@@ -963,11 +1315,11 @@ class Network_3ph:
         self.bus_df.iloc[2]= \
                 {'name':'645','number':2, 
                  'v_base': self.Vslack_ph, 'load_type':'PQ','connect':'Y',
-                 'Pa':  0,'Pb':  0,'Pc':  0,'Qa':  0,'Qb':  0,'Qc':  0}
+                 'Pa':  0,'Pb':  170,'Pc':  0,'Qa':  0,'Qb':  125,'Qc':  0}
         self.bus_df.iloc[3]= \
                 {'name':'646','number':3, 
                  'v_base': self.Vslack_ph, 'load_type':'Z', 'connect':'D',
-                 'Pa':  0,'Pb':  0,'Pc':  0,'Qa':  0,'Qb':  0,'Qc':  0}
+                 'Pa':  0,'Pb':  230,'Pc':  0,'Qa':  0,'Qb':  132,'Qc':  0}
         self.bus_df.iloc[4]= \
                 {'name':'633','number':4,  
                  'v_base': self.Vslack_ph, 'load_type':'PQ','connect':'Y',
@@ -975,11 +1327,11 @@ class Network_3ph:
         self.bus_df.iloc[5]= \
                 {'name':'634','number':5,  
                  'v_base': self.Vslack_ph, 'load_type':'PQ','connect':'Y',
-                 'Pa':  0,'Pb':  0,'Pc':  0,'Qa':  0,'Qb':  0,'Qc':  0}
+                 'Pa':  160,'Pb':  120,'Pc':  120,'Qa':  110,'Qb':  90,'Qc':  90}
         self.bus_df.iloc[6]= \
                 {'name':'671','number':6,  
                  'v_base': self.Vslack_ph, 'load_type':'PQ','connect':'D',
-                 'Pa':  0,'Pb':  0,'Pc':  0,'Qa':  0,'Qb':  0,'Qc':  0}
+                 'Pa':  385,'Pb':  385,'Pc':  385,'Qa':  220,'Qb':  220,'Qc':  220}
         self.bus_df.iloc[7]= \
                 {'name':'680','number':7,  
                  'v_base': self.Vslack_ph, 'load_type':'PQ','connect':'Y',
@@ -991,19 +1343,19 @@ class Network_3ph:
         self.bus_df.iloc[9]= \
                 {'name':'611','number':9,  
                  'v_base': self.Vslack_ph, 'load_type':'I', 'connect':'Y',
-                 'Pa':  0,'Pb':  0,'Pc':  0,'Qa':  0,'Qb':  0,'Qc':  0}
+                 'Pa':  0,'Pb':  0,'Pc':  170,'Qa':  0,'Qb':  0,'Qc':  80}
         self.bus_df.iloc[10]=\
                 {'name':'652','number':10, 
                  'v_base': self.Vslack_ph, 'load_type':'Z', 'connect':'Y',
-                 'Pa':  0,'Pb':  0,'Pc':  0,'Qa':  0,'Qb':  0,'Qc':  0}
+                 'Pa':  128,'Pb':  0,'Pc':  0,'Qa':  86,'Qb':  0,'Qc':  0}
         self.bus_df.iloc[11]=\
                 {'name':'692','number':11, 
                  'v_base': self.Vslack_ph, 'load_type':'I', 'connect':'D',
-                 'Pa':  0,'Pb':  0,'Pc':  0,'Qa':  0,'Qb':  0,'Qc':  0}
+                 'Pa':  0,'Pb':  0,'Pc':  170,'Qa':  0,'Qb':  0,'Qc':  151}
         self.bus_df.iloc[12]=\
                 {'name':'675','number':12, 
                  'v_base': self.Vslack_ph, 'load_type':'PQ','connect':'Y',
-                 'Pa':  0,'Pb':  0,'Pc':  0,'Qa':  0,'Qb':  0,'Qc':  0}
+                 'Pa':  485,'Pb':  68,'Pc':  290,'Qa':  190,'Qb':  60,'Qc':  212}
         #Create line configuration data frame
         line_config_col = ['name','Zaa','Zbb','Zcc','Zab','Zac','Zbc',
                            'Baa','Bbb','Bcc','Bab','Bac','Bbc']
@@ -1186,7 +1538,375 @@ class Network_3ph:
                                                       'Qa': 0,
                                                       'Qb': 0,
                                                       'Qc':100},
-                                                        ignore_index=True) 
+                                                        ignore_index=True)
+
+    def setup_network_eulv_reduced(self, updateYZ=True):
+        path = os.path.dirname(os.path.abspath(__file__))
+        path = os.path.dirname(os.path.dirname(__file__))
+        file_location = os.path.join(path, 'Data', 'Networks', 'eulv_reduced/')
+        buses_csv = pd.read_csv(file_location + 'eulv_bus_df.csv')
+        lines_csv = pd.read_csv(file_location + 'Lines2.txt', sep=' ',
+                                names=["new", "name", "busA", "busB", "phases", "linecode", "length", "units"])
+        #
+        self.N_buses = buses_csv.shape[0]
+        self.N_lines = lines_csv.shape[0]
+        self.N_phases = 3
+        ##Create buses dataframe
+        self.Vslack_ph = 240
+        bus_columns = ['name', 'number', 'load_type', 'connect', 'Pa', 'Pb', 'Pc', 'Qa', 'Qb', 'Qc']
+        bus_index = range(self.N_buses)
+        self.bus_df = pd.DataFrame(index=bus_index, columns=bus_columns)
+        for i in range(self.N_buses):
+            self.bus_df.iloc[i] = {'name': buses_csv['name'][i], 'number': i, 'v_base': buses_csv['v_base'][i],
+                                   'load_type': buses_csv['load_type'][i], 'connect': buses_csv['connect'][i], \
+                                   'Pa': buses_csv['Pa'][i], 'Pb': buses_csv['Pb'][i], 'Pc': buses_csv['Pc'][i],
+                                   'Qa': buses_csv['Qa'][i], 'Qb': buses_csv['Qb'][i], 'Qc': buses_csv['Qc'][i]}
+
+        # self.bus_df.iloc[0]= {'name':'650','number':0,  'v_base': self.Vslack_ph, 'load_type':'S', 'connect':'Y','Pa':  0,'Pb':  0,'Pc':  0,'Qa':  0,'Qb':  0,'Qc':  0}
+        ##Create line configuration data frame
+        line_config_col = ['name', 'Zaa', 'Zbb', 'Zcc', 'Zab', 'Zac', 'Zbc', 'Baa', 'Bbb', 'Bcc', 'Bab', 'Bac', 'Bbc']
+        line_config_df = pd.DataFrame(index=range(10), columns=line_config_col)
+        line_config_df.iloc[0] = {'name': 'Linecode=2c_.007', 'Zaa': 0.00397 + 0.000099j, 'Zbb': 0.00397 + 0.000099j,
+                                  'Zcc': 0.00397 + 0.000099j, \
+                                  'Zab': 0j, 'Zac': 0j, 'Zbc': 0j, \
+                                  'Baa': 0j, 'Bbb': 0j, 'Bcc': 0j, \
+                                  'Bab': 0j, 'Bac': 0j, 'Bbc': 0j}
+        line_config_df.iloc[1] = {'name': 'Linecode=2c_.0225', 'Zaa': 0.001257 + 0.000085j, 'Zbb': 0.001257 + 0.000085j,
+                                  'Zcc': 0.001257 + 0.000085j, \
+                                  'Zab': 0j, 'Zac': 0j, 'Zbc': 0j, \
+                                  'Baa': 0j, 'Bbb': 0j, 'Bcc': 0j, \
+                                  'Bab': 0j, 'Bac': 0j, 'Bbc': 0j}
+        line_config_df.iloc[2] = {'name': 'Linecode=2c_16', 'Zaa': 0.001166667 + 0.000088j,
+                                  'Zbb': 0.001166667 + 0.000088j, 'Zcc': 0.001166667 + 0.000088j, \
+                                  'Zab': 1.66667e-05 - 4.48339E-22j, 'Zac': 1.66667e-05 - 4.48339E-22j,
+                                  'Zbc': 1.66667e-05 - 4.48339E-22j, \
+                                  'Baa': 0j, 'Bbb': 0j, 'Bcc': 0j, \
+                                  'Bab': 0j, 'Bac': 0j, 'Bbc': 0j}
+        line_config_df.iloc[3] = {'name': 'Linecode=35_SAC_XSC', 'Zaa': 0.000832 + 9.2E-05j, 'Zbb': 0.000832 + 9.2E-05j,
+                                  'Zcc': 0.000832 + 9.2E-05j, \
+                                  'Zab': -3.6E-05 + 1.46264E-21j, 'Zac': -3.6E-05 + 1.46264E-21j,
+                                  'Zbc': -3.6E-05 + 1.46264E-21j, \
+                                  'Baa': 0j, 'Bbb': 0j, 'Bcc': 0j, \
+                                  'Bab': 0j, 'Bac': 0j, 'Bbc': 0j}
+        line_config_df.iloc[4] = {'name': 'Linecode=4c_.06', 'Zaa': 0.000839667 + 8.03333E-05j,
+                                  'Zbb': 0.000839667 + 8.03333E-05j, 'Zcc': 0.000839667 + 8.03333E-05j, \
+                                  'Zab': 0.000370667 + 5.33333E-06j, 'Zac': 0.000370667 + 5.33333E-06j,
+                                  'Zbc': 0.000370667 + 5.33333E-06j, \
+                                  'Baa': 0j, 'Bbb': 0j, 'Bcc': 0j, \
+                                  'Bab': 0j, 'Bac': 0j, 'Bbc': 0j}
+        line_config_df.iloc[5] = {'name': 'Linecode=4c_.1', 'Zaa': 0.000502333 + 0.000075j,
+                                  'Zbb': 0.000502333 + 0.000075j, 'Zcc': 0.000502333 + 0.000075j, \
+                                  'Zab': 0.000228333 + 0.000002j, 'Zac': 0.000228333 + 0.000002j,
+                                  'Zbc': 0.000228333 + 0.000002j, \
+                                  'Baa': 0j, 'Bbb': 0j, 'Bcc': 0j, \
+                                  'Bab': 0j, 'Bac': 0j, 'Bbc': 0j}
+        line_config_df.iloc[6] = {'name': 'Linecode=4c_.35', 'Zaa': 0.000165667 + 7.03333E-05j,
+                                  'Zbb': 0.000165667 + 7.03333E-05j, 'Zcc': 0.000165667 + 7.03333E-05j, \
+                                  'Zab': 7.66667E-05 + 2.83333E-06j, 'Zac': 7.66667E-05 + 2.83333E-06j,
+                                  'Zbc': 7.66667E-05 + 2.83333E-06j, \
+                                  'Baa': 0j, 'Bbb': 0j, 'Bcc': 0j, \
+                                  'Bab': 0j, 'Bac': 0j, 'Bbc': 0j}
+        line_config_df.iloc[7] = {'name': 'Linecode=4c_185', 'Zaa': 0.000304 + 7.13333E-05j,
+                                  'Zbb': 0.000304 + 7.13333E-05j, 'Zcc': 0.000304 + 7.13333E-05j, \
+                                  'Zab': 0.000138 + 3.33333E-06j, 'Zac': 0.000138 + 3.33333E-06j,
+                                  'Zbc': 0.000138 + 3.33333E-06j, \
+                                  'Baa': 0j, 'Bbb': 0j, 'Bcc': 0j, \
+                                  'Bab': 0j, 'Bac': 0j, 'Bbc': 0j}
+        line_config_df.iloc[8] = {'name': 'Linecode=4c_70', 'Zaa': 0.000799 + 0.000075j, 'Zbb': 0.000799 + 0.000075j,
+                                  'Zcc': 0.000799 + 0.000075j, \
+                                  'Zab': 0.000353 + 4E-06j, 'Zac': 0.000353 + 4E-06j, 'Zbc': 0.000353 + 4E-06j, \
+                                  'Baa': 0j, 'Bbb': 0j, 'Bcc': 0j, \
+                                  'Bab': 0j, 'Bac': 0j, 'Bbc': 0j}
+        line_config_df.iloc[9] = {'name': 'Linecode=4c_95_SAC_XC', 'Zaa': 0.000482667 + 8.03333E-05j,
+                                  'Zbb': 0.000482667 + 8.03333E-05j, 'Zcc': 0.000482667 + 8.03333E-05j, \
+                                  'Zab': 0.000160667 + 6.33333E-06j, 'Zac': 0.000160667 + 6.33333E-06j,
+                                  'Zbc': 0.000160667 + 6.33333E-06j, \
+                                  'Baa': 0j, 'Bbb': 0j, 'Bcc': 0j, \
+                                  'Bab': 0j, 'Bac': 0j, 'Bbc': 0j}
+
+        ##Create line information data frame
+        line_info_col = ['busA', 'busB', 'config', 'length', 'Z_conv_factor',
+                         'B_conv_factor']  # Z_conv_factor = ft/mile, B_conv_factor 1e-6*ft/mile
+        line_info_df = pd.DataFrame(index=range(len(lines_csv)), columns=line_info_col)
+        for i in range(len(lines_csv)):
+            busA_i = lines_csv['busA'][i][5:]
+            busB_i = lines_csv['busB'][i][5:]
+            length_i = float(lines_csv['length'][i][7:])
+            config_i = lines_csv['linecode'][i]
+            line_info_df.iloc[i] = {'busA': busA_i, 'busB': busB_i, \
+                                    'config': config_i, 'length': length_i, 'Z_conv_factor': 1, 'B_conv_factor': 1}
+
+        ##Create line data frame
+        line_columns = ['busA', 'busB', 'Zaa', 'Zbb', 'Zcc', 'Zab', 'Zac', 'Zbc', 'Baa', 'Bbb', 'Bcc', 'Bab', 'Bac',
+                        'Bbc']
+        self.line_df = pd.DataFrame(columns=line_columns)
+        self.line_df = self.line_df.append({'busA': 'sourcebus', 'busB': 'sourcebusz', \
+                                            'Zaa': 0.5743408230315273 + 1.7234619861939902j,
+                                            'Zbb': 0.5743408230315273 + 1.7234619861939902j,
+                                            'Zcc': 0.5743408230315273 + 1.7234619861939902j, \
+                                            'Zab': 0.5736068230292247 + 1.720524986189671j,
+                                            'Zac': 0.5736068230292249 + 1.7205249861896714j,
+                                            'Zbc': 0.5736068230292249 + 1.7205249861896714j, \
+                                            'Baa': 0j, 'Bbb': 0j, 'Bcc': 0j, 'Bab': 0j, 'Bac': 0j, 'Bbc': 0j},
+                                           ignore_index=True)
+        for i in range(len(line_info_df)):
+            line_info_i = line_info_df.iloc[i]
+            Zaa_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Zaa'].values[0] * line_info_i[
+                'Z_conv_factor'] * line_info_i['length']
+            Zbb_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Zbb'].values[0] * line_info_i[
+                'Z_conv_factor'] * line_info_i['length']
+            Zcc_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Zcc'].values[0] * line_info_i[
+                'Z_conv_factor'] * line_info_i['length']
+            Zab_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Zab'].values[0] * line_info_i[
+                'Z_conv_factor'] * line_info_i['length']
+            Zac_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Zac'].values[0] * line_info_i[
+                'Z_conv_factor'] * line_info_i['length']
+            Zbc_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Zbc'].values[0] * line_info_i[
+                'Z_conv_factor'] * line_info_i['length']
+            Baa_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Baa'].values[0] * line_info_i[
+                'B_conv_factor'] * line_info_i['length']
+            Bbb_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Bbb'].values[0] * line_info_i[
+                'B_conv_factor'] * line_info_i['length']
+            Bcc_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Bcc'].values[0] * line_info_i[
+                'B_conv_factor'] * line_info_i['length']
+            Bab_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Bab'].values[0] * line_info_i[
+                'B_conv_factor'] * line_info_i['length']
+            Bac_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Bac'].values[0] * line_info_i[
+                'B_conv_factor'] * line_info_i['length']
+            Bbc_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Bbc'].values[0] * line_info_i[
+                'B_conv_factor'] * line_info_i['length']
+            self.line_df = self.line_df.append(
+                {'busA': line_info_df.iloc[i]['busA'], 'busB': line_info_df.iloc[i]['busB'], \
+                 'Zaa': Zaa_i, 'Zbb': Zbb_i, 'Zcc': Zcc_i, 'Zab': Zab_i, 'Zac': Zac_i, 'Zbc': Zbc_i, \
+                 'Baa': Baa_i, 'Bbb': Bbb_i, 'Bcc': Bcc_i, 'Bab': Bab_i, 'Bac': Bac_i, 'Bbc': Bbc_i}, ignore_index=True)
+        ##Add Transformer
+        ##Y-G to Y-G transformer - therefore diagonal Y matrix (and not rank deficient)
+        ##500kVA, 4.16kV/0.48kV, R=1.1%, X=2%
+        ##impedance on the primary side: Zohms_pri = (4.16e3)**2/(500e3)*(0.011+0.02j)
+        ##
+        ##Create transformer data frame
+        ##Types: 'wye-g', 'wye', 'delta'
+        transformer_columns = ['busA', 'busB', 'typeA', 'typeB', 'Zseries', 'Zshunt']
+        self.transformer_df = pd.DataFrame(columns=transformer_columns)
+        self.transformer_df = self.transformer_df.append(
+            {'busA': 'sourcebusz', 'busB': '1', 'typeA': 'delta', 'typeB': 'wye-g', 'Zseries': 0.00086528 + 0.0086528j,
+             'Zshunt': 0j}, ignore_index=True)
+        ##e.g. can test other transformer combinations:
+        ##self.transformer_df = self.transformer_df.append({'busA':'633','busB':'634','typeA':'wye','typeB':'wye','Zseries':0.381+0.692j,'Zshunt':0},ignore_index=True)
+
+        ### Yihong Modification
+        self.capacitor_df = []
+
+        if updateYZ:
+            # print('Update Y and Z...\n',time.process_time())
+            print('Updating Y and Z...')
+            self.update_YandZ()
+
+    def setup_network_ieee123(self, updateYZ=True):
+
+        path = os.path.dirname(os.path.abspath(__file__))
+        path = os.path.dirname(os.path.dirname(__file__))
+        file_location = os.path.join(path, 'Data', 'Networks', 'feeder123/')
+
+        bus_load_data = pd.read_excel(file_location + 'spot loads data.xls', header=[2, 3])
+        bus_load_data = bus_load_data[:-1]
+
+        lines_data = pd.read_excel(file_location + 'line data.xls', header=2)
+        bus_name_list = [150] + list(range(1, 115)) + [135, 149, 151, 152, 160, 197, 250, 300, 350, 450, 610]
+
+        switch_data = pd.read_excel(file_location + 'switch data.xls', header=2)
+        # the switches that are open
+        switch_data_open = switch_data.loc[switch_data['Normal'] == 'open']
+        # the switches that are closed
+        switch_data_closed = switch_data.loc[switch_data['Normal'] == 'closed']
+        ###keep only lines that connect two connected buses
+
+        self.N_buses = len(bus_name_list)
+        self.N_lines = lines_data.shape[0]
+        self.N_phases = 3
+        ##Create buses dataframe
+        self.Vslack = 4.16e3  # slack bus line-to-line voltage
+        self.Vslack_ph = self.Vslack / np.sqrt(3)  # slack bus phase voltage
+
+        #### bus_df
+        bus_columns = ['name', 'number', 'v_base', 'load_type', 'connect', 'Pa', 'Pb', 'Pc', 'Qa', 'Qb', 'Qc']
+        bus_index = range(self.N_buses)
+        self.bus_df = pd.DataFrame(index=bus_index, columns=bus_columns)
+        for i, bus_name in enumerate(bus_name_list):
+            # if there are specified bus load, set it as the bus_load_data
+            if bus_name in bus_load_data['Node', 'bus'].values:
+                index = bus_load_data.index[bus_name == bus_load_data['Node', 'bus']][0]
+                self.bus_df.iloc[i] = {'name': str(bus_name), 'number': i, 'v_base': self.Vslack_ph,
+                                       'load_type': bus_load_data['Load', 'Model'][index][2:],
+                                       'connect': bus_load_data['Load', 'Model'][index][0], \
+                                       'Pa': bus_load_data['Ph-1', 'kW'][index], 'Pb': bus_load_data['Ph-2', 'kW'][index],
+                                       'Pc': bus_load_data['Ph-3', 'kW'][index], \
+                                       'Qa': bus_load_data['Ph-1', 'kVAr'][index], 'Qb': bus_load_data['Ph-2', 'kVAr'][index],
+                                       'Qc': bus_load_data['Ph-4', 'kVAr'][index]}
+            # if not, set the bus to some default settings
+            else:
+                self.bus_df.iloc[i] = {'name': str(bus_name), 'number': i, 'v_base': self.Vslack_ph,
+                                       'load_type': 'PQ' if i > 0 else 'S',
+                                       'connect': 'D', \
+                                       'Pa': 0,
+                                       'Pb': 0,
+                                       'Pc': 0, \
+                                       'Qa': 0,
+                                       'Qb': 0,
+                                       'Qc': 0}
+
+        #### line config df Z in Ohm/mile and B in micro Siemens per mile
+        line_config_col = ['name', 'Zaa', 'Zbb', 'Zcc', 'Zab', 'Zac', 'Zbc', 'Baa', 'Bbb', 'Bcc', 'Bab', 'Bac', 'Bbc']
+        line_config_df = pd.DataFrame(index=range(12), columns=line_config_col)
+
+        line_config_df.iloc[0] = {'name': 1, 'Zaa': 0.4576 + 1.0780j, 'Zbb': 0.4666 + 1.0482j, 'Zcc': 0.4615 + 1.0651j, \
+                                  'Zab': 0.1560 + 0.5017j, 'Zac': 0.1535 + 0.3849j, 'Zbc': 0.1580 + 0.4236j, \
+                                  'Baa': 5.6765j, 'Bbb': 5.9809j, 'Bcc': 5.3971j, \
+                                  'Bab': -1.8319j, 'Bac': -0.6982j, 'Bbc': -1.1645j}
+
+        line_config_df.iloc[1] = {'name': 2, 'Zaa': 0.4666 + 1.0482j, 'Zbb': 0.4615 + 1.0651j, 'Zcc': 0.4576 + 1.0780j, \
+                                  'Zab': 0.1580 + 0.4236j, 'Zac': 0.1560 + 0.5017j, 'Zbc': 0.1535 + 0.3849j, \
+                                  'Baa': 5.9809j, 'Bbb': 5.3971j, 'Bcc': 5.6765j, \
+                                  'Bab': -1.1645j, 'Bac': -1.8319j, 'Bbc': -0.6982j}
+
+        line_config_df.iloc[2] = {'name': 3, 'Zaa': 0.4615 + 1.0651j, 'Zbb': 0.4576 + 1.0780j, 'Zcc': 0.4666 + 1.0482j, \
+                                  'Zab': 0.1535 + 0.3849j, 'Zac': 0.1580 + 0.4236j, 'Zbc': 0.1560 + 0.5017j, \
+                                  'Baa': 5.3971j, 'Bbb': 5.6765j, 'Bcc': 5.9809j, \
+                                  'Bab': -0.6982j, 'Bac': -1.1645j, 'Bbc': -1.8319j}
+
+        line_config_df.iloc[3] = {'name': 4, 'Zaa': 0.4615 + 1.0651j, 'Zbb': 0.4666 + 1.0482j, 'Zcc': 0.4576 + 1.0780j, \
+                                  'Zab': 0.1580 + 0.4236j, 'Zac': 0.1535 + 0.3849j, 'Zbc': 0.1560 + 0.5017j, \
+                                  'Baa': 5.3971j, 'Bbb': 5.9809j, 'Bcc': 5.6765j, \
+                                  'Bab': -1.1645j, 'Bac': -0.6982j, 'Bbc': -1.8319j}
+
+        line_config_df.iloc[4] = {'name': 5, 'Zaa': 0.4666 + 1.0482j, 'Zbb': 0.4576 + 1.0780j, 'Zcc': 0.4615 + 1.0651j, \
+                                  'Zab': 0.1560 + 0.5017j, 'Zac': 0.1580 + 0.4236j, 'Zbc': 0.1535 + 0.3849j, \
+                                  'Baa': 5.9809j, 'Bbb': 5.6765j, 'Bcc': 5.3971j, \
+                                  'Bab': -1.8319j, 'Bac': -1.1645j, 'Bbc': -0.6982j}
+
+        line_config_df.iloc[5] = {'name': 6, 'Zaa': 0.4576 + 1.0780j, 'Zbb': 0.4615 + 1.0651j, 'Zcc': 0.4666 + 1.0482j, \
+                                  'Zab': 0.1535 + 0.3849j, 'Zac': 0.1560 + 0.5017j, 'Zbc': 0.1580 + 0.4236j, \
+                                  'Baa': 5.6765j, 'Bbb': 5.3971j, 'Bcc': 5.9809j, \
+                                  'Bab': -0.6982j, 'Bac': -1.8319j, 'Bbc': -1.1645j}
+
+        line_config_df.iloc[6] = {'name': 7, 'Zaa': 0.4576 + 1.0780j, 'Zbb': 0.0000 + 0.0000j, 'Zcc': 0.4615 + 1.0651j, \
+                                  'Zab': 0.0000 + 0.0000j, 'Zac': 0.1535 + 0.3849j, 'Zbc': 0.0000 + 0.0000j, \
+                                  'Baa': 5.1154j, 'Bbb': 0.0000j, 'Bcc': 5.1704j, \
+                                  'Bab': 0.0000j, 'Bac': -1.0549j, 'Bbc': 0.0000j}
+
+        line_config_df.iloc[7] = {'name': 8, 'Zaa': 0.4576 + 1.0780j, 'Zbb': 0.4615 + 1.0651j, 'Zcc': 0.0000 + 0.0000j, \
+                                  'Zab': 0.1535 + 0.3849j, 'Zac': 0.0000 + 0.0000j, 'Zbc': 0.0000 + 0.0000j, \
+                                  'Baa': 5.1154j, 'Bbb': 5.1704j, 'Bcc': 0.0000j, \
+                                  'Bab': -1.0549j, 'Bac': 0.0000j, 'Bbc': 0.0000j}
+
+        line_config_df.iloc[8] = {'name': 9, 'Zaa': 1.3292 + 1.3475j, 'Zbb': 0.0000 + 0.0000j, 'Zcc': 0.0000 + 0.0000j, \
+                                  'Zab': 0.0000 + 0.0000j, 'Zac': 0.0000 + 0.0000j, 'Zbc': 0.0000 + 0.0000j, \
+                                  'Baa': 4.5193j, 'Bbb': 0.0000j, 'Bcc': 0.0000j, \
+                                  'Bab': 0.0000j, 'Bac': 0.0000j, 'Bbc': 0.0000j}
+
+        line_config_df.iloc[9] = {'name': 10, 'Zaa': 0.0000 + 0.0000j, 'Zbb': 1.3292 + 1.3475j, 'Zcc': 0.0000 + 0.0000j, \
+                                  'Zab': 0.0000 + 0.0000j, 'Zac': 0.0000 + 0.0000j, 'Zbc': 0.0000 + 0.0000j, \
+                                  'Baa': 0.0000j, 'Bbb': 4.5193j, 'Bcc': 0.0000j, \
+                                  'Bab': 0.0000j, 'Bac': 0.0000j, 'Bbc': 0.0000j}
+
+        line_config_df.iloc[10] = {'name': 11, 'Zaa': 0.0000 + 0.0000j, 'Zbb': 0.0000 + 0.0000j,
+                                   'Zcc': 1.3292 + 1.3475j, \
+                                   'Zab': 0.0000 + 0.0000j, 'Zac': 0.0000 + 0.0000j, 'Zbc': 0.0000 + 0.0000j, \
+                                   'Baa': 0.0000j, 'Bbb': 0.0000j, 'Bcc': 4.5193j, \
+                                   'Bab': 0.0000j, 'Bac': 0.0000j, 'Bbc': 0.0000j}
+
+        line_config_df.iloc[11] = {'name': 12, 'Zaa': 1.5209 + 0.7521j, 'Zbb': 1.5329 + 0.7162j,
+                                   'Zcc': 1.5209 + 0.7521j, \
+                                   'Zab': 0.5198 + 0.2775j, 'Zac': 0.4924 + 0.2157j, 'Zbc': 0.5198 + 0.2775j, \
+                                   'Baa': 67.2242j, 'Bbb': 67.2242j, 'Bcc': 67.2242j, \
+                                   'Bab': 0.0000j, 'Bac': 0.0000j, 'Bbc': 0.0000j}
+
+        ##Create line information data frame
+        line_info_col = ['busA', 'busB', 'config', 'length', 'Z_conv_factor',
+                         'B_conv_factor']  # Z_conv_factor = ft/mile, B_conv_factor 1e-6*ft/mile
+        line_info_df = pd.DataFrame(index=range(len(lines_data)), columns=line_info_col)
+        for i in range(len(lines_data)):
+            line_info_df.iloc[i] = {'busA': str(lines_data['Node A'][i]), 'busB': str(lines_data['Node B'][i]), \
+                                    'config': lines_data['Config.'][i], 'length': float(lines_data['Length (ft.)'][i]), \
+                                    'Z_conv_factor': 1 / 5280, 'B_conv_factor': 1e-6 / 5280}
+
+        ##Create line data frame
+        line_columns = ['busA', 'busB', 'Zaa', 'Zbb', 'Zcc', 'Zab', 'Zac', 'Zbc', 'Baa', 'Bbb', 'Bcc', 'Bab', 'Bac',
+                        'Bbc']
+        self.line_df = pd.DataFrame(columns=line_columns)
+
+        # create list containing list of disconected buses by switch
+        switch_open_list = switch_data_open[['Node A', 'Node B']].values.tolist()
+        for i in range(len(line_info_df)):
+
+            line_info_i = line_info_df.iloc[i]
+
+            if ([line_info_i['busA'], line_info_i['busB']] in switch_open_list) or \
+                    ([line_info_i['busB'], line_info_i['busA']] in switch_open_list):
+                continue
+
+            Zaa_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Zaa'].values[0] * line_info_i[
+                'Z_conv_factor'] * line_info_i['length']
+            Zbb_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Zbb'].values[0] * line_info_i[
+                'Z_conv_factor'] * line_info_i['length']
+            Zcc_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Zcc'].values[0] * line_info_i[
+                'Z_conv_factor'] * line_info_i['length']
+            Zab_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Zab'].values[0] * line_info_i[
+                'Z_conv_factor'] * line_info_i['length']
+            Zac_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Zac'].values[0] * line_info_i[
+                'Z_conv_factor'] * line_info_i['length']
+            Zbc_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Zbc'].values[0] * line_info_i[
+                'Z_conv_factor'] * line_info_i['length']
+            Baa_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Baa'].values[0] * line_info_i[
+                'B_conv_factor'] * line_info_i['length']
+            Bbb_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Bbb'].values[0] * line_info_i[
+                'B_conv_factor'] * line_info_i['length']
+            Bcc_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Bcc'].values[0] * line_info_i[
+                'B_conv_factor'] * line_info_i['length']
+            Bab_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Bab'].values[0] * line_info_i[
+                'B_conv_factor'] * line_info_i['length']
+            Bac_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Bac'].values[0] * line_info_i[
+                'B_conv_factor'] * line_info_i['length']
+            Bbc_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Bbc'].values[0] * line_info_i[
+                'B_conv_factor'] * line_info_i['length']
+            self.line_df = self.line_df.append(
+                {'busA': line_info_df.iloc[i]['busA'], 'busB': line_info_df.iloc[i]['busB'], \
+                 'Zaa': Zaa_i, 'Zbb': Zbb_i, 'Zcc': Zcc_i, 'Zab': Zab_i, 'Zac': Zac_i, 'Zbc': Zbc_i, \
+                 'Baa': Baa_i, 'Bbb': Bbb_i, 'Bcc': Bcc_i, 'Bab': Bab_i, 'Bac': Bac_i, 'Bbc': Bbc_i}, ignore_index=True)
+
+        ## Add Switches that are closed. Note that, this is necessary
+        ## since some buses are not connected by line but by switches
+        Zswitch = 1e-6 + 0j
+        for i in range(len(switch_data_closed)):
+            switch_data_closed_i = switch_data_closed.iloc[i]
+            self.line_df = self.line_df.append({'busA': str(switch_data_closed_i['Node A']), 'busB': str(switch_data_closed_i['Node B']), \
+                                                'Zaa': Zswitch, 'Zbb': Zswitch, 'Zcc': Zswitch, 'Zab': 0, 'Zac': 0,
+                                                'Zbc': 0, \
+                                                'Baa': 0, 'Bbb': 0, 'Bcc': 0, 'Bab': 0, 'Bac': 0, 'Bbc': 0},
+                                               ignore_index=True)
+
+        ##Add Transformer
+        transformer_columns = ['busA', 'busB', 'typeA', 'typeB', 'Zseries', 'Zshunt']
+        self.transformer_df = pd.DataFrame(columns=transformer_columns)
+        self.transformer_df = self.transformer_df.append(
+                                    {'busA': '61', 'busB': '610', 'typeA': 'delta', 'typeB': 'delta',
+                                     'Zseries': 1.465 + 3.138j, 'Zshunt': 0}, ignore_index=True)
+
+        capacitor_data = pd.read_excel(file_location + 'cap data.xls', header=2).fillna(0)
+        capacitor_data = capacitor_data[1:-1]
+        capacitor_columns = ['name', 'number', 'bus', 'kVln', 'connect', 'Qa', 'Qb', 'Qc']
+        self.capacitor_df = pd.DataFrame(columns=capacitor_columns)
+        for i in range(1, len(capacitor_data)):
+            self.capacitor_df = self.capacitor_df.append(
+                {'name': 'cap2', 'number': i - 1, 'bus': str(capacitor_data['Node'][i]), 'kVln': 2.4, 'connect': 'Y',
+                 'Qa': capacitor_data['Ph-A'][i], 'Qb': capacitor_data['Ph-B'][i], 'Qc': capacitor_data['Ph-C'][i]},
+                ignore_index=True)
+
+        if updateYZ:
+            # print('Update Y and Z...\n',time.process_time())
+            print('Updating Y and Z...')
+            self.update_YandZ()
+
 
     def loadDssNetwork(self,ntwkName,updateYZ=True,
                        testModel=False,testPlot=False):
