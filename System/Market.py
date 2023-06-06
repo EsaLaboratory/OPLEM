@@ -449,7 +449,7 @@ class Central_market(Market):
 					#schedules[p_idx].append(asset.mpc_demand(self.t_ahead_0)-p_curt[:, nd])
 					asset.update_ems(p_curt[:, nd], self.t_ahead_0)	
 					schedules[p_idx].append(asset.Pnet_ems[self.t_ahead_0:])
-					sch = asset.Pnet_ems[self.t_ahead_0]
+					sch = asset.Pnet_ems[self.t_ahead_0:]
 
 					nd +=1
 				else:
@@ -712,9 +712,8 @@ class P2P_market(Market):
 					schedule.append(asset.Pnet_ems[self.t_ahead_0:])
 					d+=1
 				else:
-					print('Pnet_ems shape', asset.Pnet_ems.shape)
-					print('par_pref_curt shape', par_pref_output_final[i]['p_curt'][:, nd].shape)
-
+					#print('Pnet_ems shape', asset.Pnet_ems.shape)
+					#print('par_pref_curt shape', par_pref_output_final[i]['p_curt'][:, nd].shape)
 					asset.update_ems(par_pref_output_final[i]['p_curt'][:, nd], self.t_ahead_0)	
 					schedule.append(asset.Pnet_ems[self.t_ahead_0:])
 					asset.Pnet_ems[self.t_ahead_0:] = asset.Pnet_ems[self.t_ahead_0:] - par_pref_output_final[i]['p_curt'][:, nd] 
