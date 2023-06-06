@@ -33,7 +33,7 @@ def timescale(series, t_in, t_out):
             series_out[t*int(t_in/t_out) : (t+1)*int(t_in/t_out)] = series[t]
     else:
         for t in range(T_out):
-            series_out[t] = np.mean(series[t*int(t_out/t_in) : (t+1)*int(t_out/t_in)], axis=0)
+            series_out[t] = np.nanmean(series[t*int(t_out/t_in) : (t+1)*int(t_out/t_in)], axis=0)
 
     series_out = np.nan_to_num(series_out)
     return series_out
@@ -156,6 +156,10 @@ class BuildingAsset(Asset):
         self.gamma = self.dt_ems/(R*C)
         self.delta = (self.Tmax-self.Tmin)/2
 
+        self.alphat = (1 - (self.dt/(R*C)))
+        self.betat = (self.dt/C)
+        self.gammat = self.dt/(R*C)
+
         self.Pnet = np.zeros(self.T)  
         self.Qnet = np.zeros(self.T)  
         self.Pnet_ems = np.zeros(self.T_ems)  
@@ -174,9 +178,8 @@ class BuildingAsset(Asset):
         ----------
         Pnet : numpy.ndarray or float
             input powers over the simulation time series (kW)
-        enforce_const: bool
-            True: enforce the operational constraints on Tin [Tmin, Tmax]
-            False: update the energy profile based on the 
+        enforce_const: bool, default True
+            enforce indoor temperature limits constraints or not
         t: int, default=None
             time interval (over simulation time scale T) for the update
             if None: update is performed over the whole simulation horizon T
@@ -194,7 +197,7 @@ class BuildingAsset(Asset):
 
     def _update_control_t(self, Pnet_t, t, enforce_const):
         """
-        Update the hvac power (if enforce_const set to True) and indoor temperature at time interval t
+        Update the hvac power and indoor temperature at time interval t
         Parameters
         ----------
         Pnet_t : float
@@ -207,14 +210,14 @@ class BuildingAsset(Asset):
         """
 
         #self.Pnet[t] = Pnet_t
-        t_ems = self.dt/self.dt_ems
+        t_ems = int(self.dt/self.dt_ems)
         ######
         if Pnet_t < 0:
             self.Pnet[t] = - Pnet_t
             if self.Tin[t] <= self.Tmin[int(t*t_ems)]  and enforce_const==True:
                 self.Pnet[t] = 0 
-            if t < self.T-1:
-                self.Tin[t+1] = self.alpha*self.Tin[t] - self.beta*self.CoP_cooling*self.Pnet[t] + self.gamma*self.Ta[t]                
+            if t < self.T-1:   #(1-t_ems*(self.alpha-1))
+                self.Tin[t+1] = self.alphat*self.Tin[t] - self.betat*self.CoP_cooling*self.Pnet[t] + self.gammat*self.Ta[t]                
             #else:
             #    self.Tin[0] = self.alpha*self.Tin[t] + self.beta*self.CoP_cooling*self.Pnet[t] + self.gamma*self.Ta[t]   
 
@@ -222,16 +225,32 @@ class BuildingAsset(Asset):
             self.Pnet[t] = Pnet_t
             if self.Tin[t] >= self.Tmax[int(t*t_ems)] and enforce_const==True:
                 self.Pnet[t] = 0
-            if t < self.T-1:
-                self.Tin[t+1] = self.alpha*self.Tin[t] + self.beta*self.CoP_heating*self.Pnet[t] + self.gamma*self.Ta[t]                
+            if t < self.T-1:   #(1-t_ems*(self.alpha-1))
+                self.Tin[t+1] = self.alphat*self.Tin[t] + self.betat*self.CoP_heating*self.Pnet[t] + self.gammat*self.Ta[t]                
             #else:
             #    self.Tin[0] = self.alpha*self.Tin[t] + self.beta*self.CoP_heating*self.Pnet[t] + self.gamma*self.Ta[t]
-                
 
         self.Tin_ems = timescale(self.Tin, self.dt, self.dt_ems)
+        #print('Tin',self.Tin)
+        #print('Tin_ems',self.Tin_ems)
         self.Pnet_ems = timescale(self.Pnet, self.dt, self.dt_ems)
 
     def update_ems(self, Pnet_ems, t0=0, enforce_const=True):
+        """
+        update the power schedule according to the EMS signal
+        Parameters
+        -------------
+        Pnet_ems: np.array
+            the EMS schedule
+        t0: int
+            the time start of the update
+        enforce_const: bool, default True
+            enforce indoor temperature limits constraints or not
+        Returns
+        -----------
+
+        """
+
 
         """
         #convert to self.T and update
@@ -252,16 +271,17 @@ class BuildingAsset(Asset):
                 for t in range(int(t_ems*self.dt_ems/self.dt), int((t_ems+1)*self.dt_ems/self.dt)):
                     self._update_control_t(Pnet_ems[t_ems-t0], t, enforce_const)
 
-
     def update_discrete(self, action, t, enforce_const=True):
         """
-       Update the hvac power (if enforce_const set to True) and indoor temperature at time interval t
+        Update the power schedule with a discrete EMS signal
         Parameters
         ----------
         action : 
             1=heating ON, -1=cooling ON, 0=OFF
-         t : int
+        t : int
             time interval for the update
+        enforce_const: bool, default True
+            enforce operational constraints on E ([Emin, Emax]) or not
         """
         if action ==2:
             Pnet_t = self.Hmax
@@ -294,16 +314,16 @@ class BuildingAsset(Asset):
                                -1*np.identity(self.T_ems-t0),
                                np.zeros((self.T_ems-t0,self.T_ems-t0)), 
                                 np.zeros((self.T_ems-t0,self.T_ems-t0)),  
-                                self.dt_ems*self.CoP_heating*Gamma,
-                                -self.dt_ems*self.CoP_heating*Gamma 
+                                self.CoP_heating*Gamma, #self.dt_ems*
+                                -self.CoP_heating*Gamma #self.dt_ems*
                                 ), axis=0)
 
         col2 = np.concatenate((np.zeros((self.T_ems-t0,self.T_ems-t0)),
                                np.zeros((self.T_ems-t0,self.T_ems-t0)), 
                                np.identity(self.T_ems-t0), 
                                -1*np.identity(self.T_ems-t0),
-                               -self.dt_ems*self.CoP_cooling*Gamma,
-                               self.dt_ems*self.CoP_cooling*Gamma
+                               -self.CoP_cooling*Gamma,#self.dt_ems*
+                               self.CoP_cooling*Gamma #self.dt_ems*
                                ), axis=0)
 
         A = np.concatenate((col1, col2), axis=1)
@@ -312,7 +332,7 @@ class BuildingAsset(Asset):
         Ta_discount[0] = self.Ta_ems[t0] #
         for t in range(1,self.T_ems-t0): #-t0 added for receiding horizon
             ### Sigma_t=1^j alpha**(j-t)*Ta[t]
-            Ta_discount[t] = np.dot(Gamma[t, :t+1],self.Ta_ems[t0:t0+t+1])  
+            Ta_discount[t] = np.dot(Gamma[t, :t+1],self.Ta_ems[t0:t0+t+1]) # np.dot(Gamma[t, :t+1],self.Ta_ems[t0:t0+t+1])  
             #Ta_discount[t] = np.dot(Gamma[t-1, :t],self.Ta_ems[t0:t0+t]) this works better but it's WRONG !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         T0_discount = self.alpha*self.T0*np.flip(Gamma[-1]) #T0*[alpha, ...., alpha^Tems]
@@ -417,7 +437,7 @@ class BuildingAsset(Asset):
 
     def maxdemand_baseline(self):
         """
-        Compute the baseline consumption of a building in the absence of flexibility
+        Compute the baseline consumption of the building 
         by minimizing the peak demand
         
         returns
@@ -451,7 +471,7 @@ class BuildingAsset(Asset):
 
     def toup_baseline(self, toup):
         """
-        Compute the baseline consumption of a building in the absence of flexibility
+        Compute the baseline consumption of the building
         Parameters
         ----------
         toup : 1d array (1, T_ems)
@@ -507,8 +527,8 @@ class BuildingAsset(Asset):
         P_cool = pic.RealVariable('P_cool',self.T_ems)
         P_heat = pic.RealVariable('P_heat',self.T_ems)
         T_in = pic.RealVariable('T_in',self.T_ems)
-        Soft_min = pic.RealVariable('Soft_min',self.T_ems)
-        Soft_max = pic.RealVariable('Soft_max',self.T_ems)
+        #Soft_min = pic.RealVariable('Soft_min',self.T_ems)
+        #Soft_max = pic.RealVariable('Soft_max',self.T_ems)
 
         prob.add_constraint(Flex >= 0)
         prob.add_constraint(P_cool >= 0 )
@@ -603,7 +623,7 @@ class StorageAsset(Asset):
     """
     def __init__(self, Emax, Emin, Pmax, Pmin, E0, ET, bus_id, dt, T, dt_ems,
                  T_ems, phases=[0, 1, 2], Pmax_abs=None, c_deg_lin=None,
-                 eff_ch=1, eff_opt_ch=1, eff_dis=1, eff_opt_dis=1, self_dis =1, type_flex='battery'):
+                 eff_ch=1, eff_opt_ch=1, eff_dis=1, eff_opt_dis=1, self_dis =1):
         Asset.__init__(self, bus_id, dt, T, dt_ems, T_ems, phases=phases)
         self.Emax = Emax
         self.Emin = Emin
@@ -630,21 +650,19 @@ class StorageAsset(Asset):
         self.eff_dis = eff_dis*np.ones(100)
         self.eff_opt_ch = eff_opt_ch
         self.eff_opt_dis = eff_opt_dis 
-        self.type_flex = type_flex
         self.self_dis = self_dis
         self.type = 'storage'
 
 # NEEDED FOR OXEMF EV CASE
     def update_control(self, Pnet, t0=0, enforce_const=True):
         """
-        Update the energy profile and the storage system power if enforce_const is set to True
+        Update the energy profile and the storage system power based on the 'Pnet' signal
         Parameters
         ----------
         Pnet : float or numpy.ndarray
             input powers over the simulation time series (kW)
-        enforce_const: bool
-            True: enforce the operational constraints on E [Emin, Emax]
-            False: update the energy profile based on Pnet
+        enforce_const: bool, default True
+            enforce the operational constraints on E ([Emin, Emax]) or not
         t0: int, default=0
             time interval (over simulation time scale T) for the update
         """
@@ -655,7 +673,6 @@ class StorageAsset(Asset):
 
         ##### catch errors:
         #if len(Pnet) != (self.T or 1 or self.T_ems)-t0
-        ###pay attention here 't' entered by the user maybe of T_ems timescale!!!!
 
         for t in range(t0, self.T):
             self._update_control_t(Pnet[t-t0], t, enforce_const)
@@ -664,7 +681,7 @@ class StorageAsset(Asset):
 # NEEDED FOR OXEMF EV CASE
     def _update_control_t(self, Pnet_t, t, enforce_const):
         """
-        Update the storage system power (if enforce_const is True) and energy at time interval t
+        Update the storage system power and energy at time interval t
         Parameters
         ----------
         Pnet_t : float
@@ -710,6 +727,8 @@ class StorageAsset(Asset):
             input powers over the time series (kW)
         t : int
             time interval for the update
+        enforce_const: bool, default True
+            enforce indoor temperature limits constraints or not
         """
         """
         #convert to self.T and update
@@ -749,9 +768,8 @@ class StorageAsset(Asset):
             1=charging, -1=discharging, 0=idle
         t : int
             time interval (over simulation tims scale T) for the update 
-        enforce_const: bool
-            True: enforce the operational constraints on E [Emin, Emax]
-            False: update the energy profile based on action
+        enforce_const: bool, default True
+            enforce the operational constraints on E ([Emin, Emax]) or not
         """
 
         Pnet = (action-1)*self.Pmax[t0]
@@ -990,8 +1008,8 @@ class NondispatchableAsset(Asset):
         predicted real input powers over the time series (kW)
     Qnet_pred : float or None
         predicted reactive input powers over the time series (kVar)
-    curt: float or None [0,1]
-        percentage (%) of load/generation that can be curtailed
+    curt: Default False
+        if the power can be curtailed or not
     Returns
     -------
     Asset
@@ -1020,10 +1038,42 @@ class NondispatchableAsset(Asset):
         self.curt = curt
 
     def mpc_demand(self, t0=0):
+        """
+        a power vector composed of the actual realisiation of the current time step and the predicted values for the future time steps
+        Parameters
+        ---------------
+        t0: int default=0
+            first time slot of observation
+        Returns
+        ----------------
+        demand: np.array
+            power vector
+        """
         demand = np.zeros(self.T_ems-t0)
         demand[0]=self.Pnet_ems[t0]
         demand[1:]=self.Pnet_ems_pred[t0+1:]
         return demand
+
+    def update_ems(self, curt, t0=0):
+        """
+        Update the schedule of the asset based on the curt signal form the EMS
+        Parameters
+        ----------
+        curt : np.array
+            curtailed amount over the time series (kW)
+        t0 : int
+            start time interval for the update
+        """
+
+        if np.isscalar(curt):
+            for t in range(int(t0*self.dt_ems/self.dt), int((t0+1)*self.dt_ems/self.dt)):
+                self.Pnet[t] -= curt
+        else:
+            for t_ems in range(t0, len(Pnet_ems)):
+                for t in range(int(t_ems*self.dt_ems/self.dt), int((t_ems+1)*self.dt_ems/self.dt)):
+                    self.Pnet[t] -= curt[t_ems-t0]
+
+        self.Pnet_ems = timescale(self.Pnet, self.dt, self.dt_ems)
 
     def polytope(self, t0):
         """
@@ -1042,10 +1092,10 @@ class NondispatchableAsset(Asset):
         """
 
         A = np.concatenate((np.identity(self.T_ems-t0), np.identity(self.T_ems-t0)), axis=1)
-        if curt:
-            b= np.concatenate((self.Pnet_ems[t0], self.Pnet_ems_pred[t0+1:], np.zeros(self.T_ems-t0)), axis=0)
+        if self.curt:
+            b= np.concatenate(([self.Pnet_ems[t0]], self.Pnet_ems_pred[t0+1:], np.zeros(self.T_ems-t0)), axis=0)
         else: 
-            b= np.concatenate((self.Pnet_ems[t0], self.Pnet_ems_pred[t0+1:], -self.Pnet_ems[t0], -self.Pnet_ems_pred[t0+1:]), axis=0)
+            b= np.concatenate(([self.Pnet_ems[t0]], self.Pnet_ems_pred[t0+1:], [-self.Pnet_ems[t0]], -self.Pnet_ems_pred[t0+1:]), axis=0)
 
         return (A,b)
 

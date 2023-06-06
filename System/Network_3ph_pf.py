@@ -688,7 +688,6 @@ class Network_3ph:
                 (G_wye_nondispatch[bus_ph_index,i]+\
                  G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Qnet_ems[t]
 
-        #set up a copy of the network for MPC interval t
         network_t = copy.deepcopy(self)#.network)
         network_t.clear_loads()  #self.clear
         for bus_id in range(self.N_buses):
@@ -758,7 +757,24 @@ class Network_3ph:
         v_abs_max_vec = network_t.v_abs_max[1:,:].reshape(-1,1)
         v_abs_min_vec = network_t.v_abs_min[1:,:].reshape(-1,1)
 
-        return A_Pslack_nd, b_Pslack, A_vlim_nd, b_vlim, v_abs_min_vec, v_abs_max_vec
+        A_lines = np.empty((self.N_phases, len(assets_nd)))
+        i_abs_max = []
+        for line_ij in range(self.N_lines):
+                #if line_ij not in i_unconstrained_lines:
+                iabs_max_line_ij = network_t.i_abs_max[line_ij,:] #3 phases
+                #concatenate
+                i_abs_max.append(iabs_max_line_ij)
+
+                # maximum current magnitude constraint
+                A_line = np.matmul(network_t.Jabs_dPQwye_list[line_ij],\
+                                   G_wye_nondispatch_PQ)\
+                                   + np.matmul(network_t.\
+                                               Jabs_dPQdel_list[line_ij],\
+                                               G_del_nondispatch_PQ)
+                #concatenate in rows   Aline (N_phases, N_loads) and we have 1Aline per ij line
+                A_lines = np.concatenate((A_lines, A_line), axis=0)                  
+
+        return A_Pslack_nd, b_Pslack, A_vlim_nd, b_vlim, v_abs_min_vec, v_abs_max_vec, A_lines, np.array(i_abs_max)
 
     def zbus_pf(self):
         """
@@ -1213,7 +1229,7 @@ class Network_3ph:
             Y_BB = Y_BB
             Y_BA = np.matmul(Y_BA,A_i.T)
 
-#Diagonal elements
+            #Diagonal elements
             self.Ynet[busA_Yindex+0:busA_Yindex+3,
                       busA_Yindex+0:busA_Yindex+3] = \
                 self.Ynet[busA_Yindex+0:busA_Yindex+3,
