@@ -19,9 +19,9 @@ sys.path.insert(0, os.path.abspath('../'))
 
 # -- Project information -----------------------------------------------------
 
-project = u'OPEN'
-copyright = u'2019, Thomas Morstyn, Avinash Vijay, Katherine Collet, Filiberto Fele, Matthew Deakin, Sivapriya Mothilal Bhagavathy, Scot Wheeler, Malcolm McCulloch'
-author = u'Thomas Morstyn, Avinash Vijay, Katherine Collet, Filiberto Fele, Matthew Deakin, Sivapriya Mothilal Bhagavathy, Scot Wheeler, Malcolm McCulloch'
+project = u'OPLEM' #'OPEN'
+copyright = u'2023, Chaimaa Essayeh, Thomas Morstyn'
+author = u'Chaimaa Essayeh, Thomas Morstyn'
 
 # The short X.Y version
 version = u'1.1'
