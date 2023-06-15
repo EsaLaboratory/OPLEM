@@ -72,7 +72,7 @@ class Market:
 		if np.all(self.P_import)==None:
 			self.P_import=np.inf*np.ones(self.T_market)
 
-	def simulate_network_pp(self, singl_iter=False):
+	def simulate_network_pp(self, single_iter=False):
 		"""
 		simulate the power flow of the network if the network is created using pandaspower
 		Parameters:
@@ -166,22 +166,21 @@ class Market:
 		for par in self.participants:
 		    for asset in par.assets:
 		        assets_all.append(asset)
-		participant_all = Participant(len(self.participants)+2, assets_all)
 
 		load_buses = np.where(np.abs(self.network.bus_df['Pa'])+np.abs(self.network.bus_df['Pb'])+np.abs(self.network.bus_df['Pc'])>0)[0]
 		load_phases = []
 		for load_bus_idx in range(len(load_buses)):
 		    phase_list = []
-		    if np.abs(network.bus_df.iloc[load_buses[load_bus_idx]]['Pa']) > 0:
+		    if np.abs(self.network.bus_df.iloc[load_buses[load_bus_idx]]['Pa']) > 0:
 		          phase_list.append(0)
-		    if np.abs(network.bus_df.iloc[load_buses[load_bus_idx]]['Pb']) > 0:
+		    if np.abs(self.network.bus_df.iloc[load_buses[load_bus_idx]]['Pb']) > 0:
 		          phase_list.append(1)
-		    if np.abs(network.bus_df.iloc[load_buses[load_bus_idx]]['Pc']) > 0:
+		    if np.abs(self.network.bus_df.iloc[load_buses[load_bus_idx]]['Pc']) > 0:
 		          phase_list.append(2)
 		    load_phases.append(np.array(phase_list))  
 
-		T = participant_all.assets[0].T
-		dt = participant_all.assets[0].dt 
+		T = assets_all[0].T
+		dt = assets_all[0].dt  
 		t0 = self.t_ahead_0*int(self.dt_market/dt)
 		if single_iter:
 			T_final = (self.t_ahead_0+1)*int(self.dt_market/dt)
@@ -196,7 +195,7 @@ class Market:
 		        bus = load_buses[b_idx]
 		        n_phases = len(load_phases[b_idx]) 
 		        p_sum, q_sum=0, 0
-		        for asset in participant_all.assets:
+		        for asset in assets_all:
 		            if asset.bus_id == bus:
 		                #p_sum += asset.Pnet_ems[t]
 		                #q_sum += asset.Qnet_ems[t]
@@ -208,12 +207,14 @@ class Market:
 		    network_t.zbus_pf()
 		    network_pf.append(network_t)
 
+		return network_pf
+
 class Central_market(Market):
 
 	def __init__(self, participants, dt_market, T_market, price_imp, \
-				 t_ahead_0=0, P_import=None, P_export=None, price_exp=None, network=None):
+				 t_ahead_0=0, P_import=None, P_export=None, price_exp=None, network=None, nw_const=True):
 		Market.__init__(self, participants, dt_market, T_market, price_imp, t_ahead_0=t_ahead_0, P_import=P_import, P_export=P_export, price_exp=price_exp, network=network)
-
+		self.nw_const = nw_const
 	def market_clearing(self, v_unconstrained_buses=[], i_unconstrained_lines=[]):
 		"""
 		computes assets schedules based on central optimisation
@@ -262,71 +263,71 @@ class Central_market(Market):
 		if len(participant_all.assets_nd):
 			p_curt = pic.RealVariable('p_curt', (self.T_market-self.t_ahead_0, len(participant_all.assets_nd)))
 
-		#if (len(v_unconstrained_buses) == len(self.network.N_buses)) and (len(i_unconstrained_lines)==len(self.network.N_lines)):
-			
-		# account for network constraints
-		A_Pslack_wye_flex_list, A_Pslack_del_flex_list, A_vlim_wye_flex_list, A_vlim_del_flex_list, A_line_wye_flex_list, A_line_del_flex_list = [], [], [], [], [], []
-		A_Pslack_wye_nd_list, A_Pslack_del_nd_list, A_vlim_wye_nd_list, A_vlim_del_nd_list, A_line_wye_nd_list, A_line_del_nd_list = [], [], [], [], [], []
 		
-		for t_ems in range(self.T_market-self.t_ahead_0):
+		if self.nw_const:	
+		# account for network constraints
+			A_Pslack_wye_flex_list, A_Pslack_del_flex_list, A_vlim_wye_flex_list, A_vlim_del_flex_list, A_line_wye_flex_list, A_line_del_flex_list = [], [], [], [], [], []
+			A_Pslack_wye_nd_list, A_Pslack_del_nd_list, A_vlim_wye_nd_list, A_vlim_del_nd_list, A_line_wye_nd_list, A_line_del_nd_list = [], [], [], [], [], []
+		
+			for t_ems in range(self.T_market-self.t_ahead_0):
 
-			A_Pslack_flex, A_Pslack_nd, b_Pslack, A_vlim_flex, A_vlim_nd, b_vlim, v_abs_min_vec, v_abs_max_vec, A_lines_flex, A_lines_nd,\
-			A_Pslack_wye_flex, A_Pslack_del_flex, A_vlim_wye_flex, A_vlim_del_flex, A_line_wye_flex, A_line_del_flex, \
-			A_Pslack_wye_nd, A_Pslack_del_nd, A_vlim_wye_nd, A_vlim_del_nd, A_line_wye_nd, A_line_del_nd =\
-			self.network.get_parameters(participant_all.assets_nd, participant_all.assets_flex, t_ems, self.t_ahead_0)
+				A_Pslack_flex, A_Pslack_nd, b_Pslack, A_vlim_flex, A_vlim_nd, b_vlim, v_abs_min_vec, v_abs_max_vec, A_lines_flex, A_lines_nd,\
+				A_Pslack_wye_flex, A_Pslack_del_flex, A_vlim_wye_flex, A_vlim_del_flex, A_line_wye_flex, A_line_del_flex, \
+				A_Pslack_wye_nd, A_Pslack_del_nd, A_vlim_wye_nd, A_vlim_del_nd, A_line_wye_nd, A_line_del_nd =\
+				self.network.get_parameters(participant_all.assets_nd, participant_all.assets_flex, t_ems, self.t_ahead_0)
 
-			#balance constraint
-			prob.add_constraint(Pimp[t_ems]-Pexp[t_ems] == sum(A_Pslack_flex[i]*
-				                                            (x[t_ems, i] + x[self.T_market-self.t_ahead_0+t_ems, i]) for i in range(len(participant_all.assets_flex)))
-			                                              -sum(A_Pslack_nd[k]*p_curt[t_ems, k] for k in range(len(participant_all.assets_nd)))
-			                                                + (b_Pslack/1e3)
-	                            )
-			
-			# voltage magnitude constraints:
-			for bus_ph_index in range(self.network.N_phases*(self.network.N_buses-1)):
-				if int(bus_ph_index/3) not in (np.array(v_unconstrained_buses)-1):
-					prob.add_constraint(sum(A_vlim_flex[bus_ph_index,i]*
-	    				                    (x[t_ems, i] + x[self.T_market-self.t_ahead_0+t_ems, i])*1e3 for i in range(len(participant_all.assets_flex)))
-	    			                    -sum(A_vlim_nd[bus_ph_index,k]*p_curt[t_ems, k]*1e3 for k in range(len(participant_all.assets_nd)))
-	    			                    + b_vlim[bus_ph_index] 
-	    			                    <=\
-	                                    v_abs_max_vec[bus_ph_index])
-					prob.add_constraint(sum(A_vlim_flex[bus_ph_index,i]*
-	                	                    (x[t_ems,i] + x[self.T_market-self.t_ahead_0+t_ems, i])*1e3 for i in range(len(participant_all.assets_flex)))
-	                                    -sum(A_vlim_nd[bus_ph_index,k]*p_curt[t_ems, k]*1e3 for k in range(len(participant_all.assets_nd)))
-	                                    + b_vlim[bus_ph_index] >=\
-	                                    v_abs_min_vec[bus_ph_index])
+				#balance constraint
+				prob.add_constraint(Pimp[t_ems]-Pexp[t_ems] == sum(A_Pslack_flex[i]*
+					                                            (x[t_ems, i] + x[self.T_market-self.t_ahead_0+t_ems, i]) for i in range(len(participant_all.assets_flex)))
+				                                              -sum(A_Pslack_nd[k]*p_curt[t_ems, k] for k in range(len(participant_all.assets_nd)))
+				                                                + (b_Pslack/1e3)
+		                            )
+				
+				# voltage magnitude constraints:
+				for bus_ph_index in range(self.network.N_phases*(self.network.N_buses-1)):
+					if int(bus_ph_index/3) not in v_unconstrained_buses: #(np.array(v_unconstrained_buses)-1):
+						prob.add_constraint(sum(A_vlim_flex[bus_ph_index,i]*1e3*
+		    				                    (x[t_ems, i] + x[self.T_market-self.t_ahead_0+t_ems, i]) for i in range(len(participant_all.assets_flex)))
+		    			                    -sum(A_vlim_nd[bus_ph_index,k]*1e3*p_curt[t_ems, k] for k in range(len(participant_all.assets_nd)))
+		    			                    + b_vlim[bus_ph_index] 
+		    			                    <=\
+		                                    v_abs_max_vec[bus_ph_index])
+						prob.add_constraint(sum(A_vlim_flex[bus_ph_index,i]*1e3*
+		                	                    (x[t_ems,i] + x[self.T_market-self.t_ahead_0+t_ems, i]) for i in range(len(participant_all.assets_flex)))
+		                                    -sum(A_vlim_nd[bus_ph_index,k]*1e3*p_curt[t_ems, k] for k in range(len(participant_all.assets_nd)))
+		                                    + b_vlim[bus_ph_index] >=\
+		                                    v_abs_min_vec[bus_ph_index])
 
-	        # Line current magnitude constraints:
-			#ij=0
-			for line_ij in range(self.network.N_lines):
-				if line_ij not in i_unconstrained_lines:	
-					for ph in range(self.network.N_phases):
-						prob.add_constraint(sum(A_lines_flex[line_ij][ph,i]*(x[t_ems, i] + x[self.T_market-self.t_ahead_0+t_ems, i])*1e3 for i in range(len(participant_all.assets_flex)))\
-	                                       -sum(A_lines[line_ij][ph,k]*p_curt[k]*1e3 for k in range(len(participant_all.assets_nd)))
-	                               + self.network.Jabs_I0_list[line_ij][ph] <=\
-	                               self.network.i_abs_max[line_ij,ph])
+		        # Line current magnitude constraints:
+				#ij=0
+				for line_ij in range(self.network.N_lines):
+					if line_ij not in i_unconstrained_lines:	
+						for ph in range(self.network.N_phases):
+							prob.add_constraint(sum(A_lines_flex[line_ij][ph,i]*1e3*(x[t_ems, i] + x[self.T_market-self.t_ahead_0+t_ems, i]) for i in range(len(participant_all.assets_flex)))\
+		                                       -sum(A_lines_nd[line_ij][ph,k]*1e3*p_curt[k] for k in range(len(participant_all.assets_nd)))
+		                               + self.network.Jabs_I0_list[line_ij][ph] <=\
+		                               self.network.i_abs_max[line_ij,ph])
 
-					#ij+=1
-			A_Pslack_wye_flex_list.append(A_Pslack_wye_flex) 
-			A_Pslack_del_flex_list.append(A_Pslack_del_flex)
-			A_vlim_wye_flex_list.append(A_vlim_wye_flex)
-			A_vlim_del_flex_list.append(A_vlim_del_flex)
-			A_line_wye_flex_list.append(A_line_wye_flex)
-			A_line_del_flex_list.append(A_line_del_flex)
+						#ij+=1
+				A_Pslack_wye_flex_list.append(A_Pslack_wye_flex) 
+				A_Pslack_del_flex_list.append(A_Pslack_del_flex)
+				A_vlim_wye_flex_list.append(A_vlim_wye_flex)
+				A_vlim_del_flex_list.append(A_vlim_del_flex)
+				A_line_wye_flex_list.append(A_line_wye_flex)
+				A_line_del_flex_list.append(A_line_del_flex)
 
-			A_Pslack_wye_nd_list.append(A_Pslack_wye_nd) 
-			A_Pslack_del_nd_list.append(A_Pslack_del_nd)
-			A_vlim_wye_nd_list.append(A_vlim_wye_nd)
-			A_vlim_del_nd_list.append(A_vlim_del_nd)
-			A_line_wye_nd_list.append(A_line_wye_nd)
-			A_line_del_nd_list.append(A_line_del_nd)
-		"""
-		# balance constraint
-		prob.add_constraint( P_demand - sum(p_curt[:, a] for a in range(len(participant_all.assets_nd))) 
-	    	               + sum(x[: self.T_market-self.t_ahead_0, a] + x[self.T_market-self.t_ahead_0:, a] for a in range(len(participant_all.assets_flex)))\
-	                      == Pimp- Pexp)
-		"""
+				A_Pslack_wye_nd_list.append(A_Pslack_wye_nd) 
+				A_Pslack_del_nd_list.append(A_Pslack_del_nd)
+				A_vlim_wye_nd_list.append(A_vlim_wye_nd)
+				A_vlim_del_nd_list.append(A_vlim_del_nd)
+				A_line_wye_nd_list.append(A_line_wye_nd)
+				A_line_del_nd_list.append(A_line_del_nd)
+		else:
+			# balance constraint
+			prob.add_constraint( P_demand - sum(p_curt[:, a] for a in range(len(participant_all.assets_nd))) 
+		    	               + sum(x[: self.T_market-self.t_ahead_0, a] + x[self.T_market-self.t_ahead_0:, a] for a in range(len(participant_all.assets_flex)))\
+		                      == Pimp- Pexp)
+		
 		# min/max import/export	
 		prob.add_constraint( Pimp >= 0)
 		prob.add_constraint( Pexp >= 0)
@@ -360,72 +361,73 @@ class Central_market(Market):
 		print('Optimisation status:', prob.status, prob.value)
 		
         ##############################################################################################################
-		print('* Computing clearing prices ...')
-		
-		N_load_bus_phases = self.network.N_phases*(self.network.N_buses-1)
+		if self.nw_const:
+			print('* Computing clearing prices ...')
+			
+			N_load_bus_phases = self.network.N_phases*(self.network.N_buses-1)
 
-		#Get constraint dual variables
-		dual_P_slack = np.zeros([self.T_market-self.t_ahead_0])
-		dual_vbus_max = np.zeros([self.T_market-self.t_ahead_0,N_load_bus_phases])
-		dual_vbus_min = np.zeros([self.T_market-self.t_ahead_0,N_load_bus_phases])
-		dual_iline_max = np.zeros([self.T_market-self.t_ahead_0,self.network.N_phases*self.network.N_lines])
-        
-		const_index=0
-		for t in range(self.T_market-self.t_ahead_0):
-			dual_P_slack[t]= np.squeeze(prob.get_constraint(const_index).dual)
-			const_index += 1
+			#Get constraint dual variables
+			dual_P_slack = np.zeros([self.T_market-self.t_ahead_0])
+			dual_vbus_max = np.zeros([self.T_market-self.t_ahead_0,N_load_bus_phases])
+			dual_vbus_min = np.zeros([self.T_market-self.t_ahead_0,N_load_bus_phases])
+			dual_iline_max = np.zeros([self.T_market-self.t_ahead_0,self.network.N_phases*self.network.N_lines])
+	        
+			const_index=0
+			for t in range(self.T_market-self.t_ahead_0):
+				dual_P_slack[t]= np.squeeze(prob.get_constraint(const_index).dual)
+				const_index += 1
 
-			for bus_ph_index in range(N_load_bus_phases):
-				if int(bus_ph_index/3) not in (np.array(v_unconstrained_buses)-1):
-					dual_vbus_max[t,bus_ph_index] = np.squeeze(prob.get_constraint(const_index).dual)
-					const_index += 1
-					dual_vbus_min[t,bus_ph_index] = np.squeeze(prob.get_constraint(const_index).dual)
-					const_index+=1
-
-			for line_ij in range(self.network.N_lines):
-				if line_ij not in i_unconstrained_lines:	
-					for ph in range(self.network.N_phases):
-						dual_iline_max[t, line_ij+ph] = np.squeeze(prob.get_constraint(const_index).dual)
+				for bus_ph_index in range(N_load_bus_phases):
+					if int(bus_ph_index/3) not in (np.array(v_unconstrained_buses)-1):
+						dual_vbus_max[t,bus_ph_index] = np.squeeze(prob.get_constraint(const_index).dual)
 						const_index += 1
+						dual_vbus_min[t,bus_ph_index] = np.squeeze(prob.get_constraint(const_index).dual)
+						const_index+=1
+
+				for line_ij in range(self.network.N_lines):
+					if line_ij not in i_unconstrained_lines:	
+						for ph in range(self.network.N_phases):
+							dual_iline_max[t, line_ij+ph] = np.squeeze(prob.get_constraint(const_index).dual)
+							const_index += 1
 
 
-        ###############################
-		LMP_P_wye_flex = np.zeros((self.T_market-self.t_ahead_0, len(participant_all.assets_flex)))
-		LMP_P_del_flex = np.zeros((self.T_market-self.t_ahead_0, len(participant_all.assets_flex)))
+	        ###############################
+			LMP_P_wye_flex = np.zeros((self.T_market-self.t_ahead_0, len(participant_all.assets_flex)))
+			LMP_P_del_flex = np.zeros((self.T_market-self.t_ahead_0, len(participant_all.assets_flex)))
 
-		LMP_P_wye_nd = np.zeros((self.T_market-self.t_ahead_0, len(participant_all.assets_nd)))
-		LMP_P_del_nd = np.zeros((self.T_market-self.t_ahead_0, len(participant_all.assets_nd)))
-		#CHECK INDEXES 
-		for t in range(self.T_market-self.t_ahead_0):
-			for flex in range(len(participant_all.assets_flex)):
+			LMP_P_wye_nd = np.zeros((self.T_market-self.t_ahead_0, len(participant_all.assets_nd)))
+			LMP_P_del_nd = np.zeros((self.T_market-self.t_ahead_0, len(participant_all.assets_nd)))
+			#CHECK INDEXES 
+			for t in range(self.T_market-self.t_ahead_0):
+				for flex in range(len(participant_all.assets_flex)):
 
-				LMP_P_wye_flex[t,flex] = 1/self.dt_market*(#dual_P_wye[t,ph]\
-		                           dual_P_slack[t]\
-		                           -sum(dual_vbus_max[t,flex]*A_vlim_wye_flex_list[t][ph,flex] for ph in range(N_load_bus_phases))\
-		                           +sum(dual_vbus_min[t,flex]*A_vlim_wye_flex_list[t][ph,flex] for ph in range(N_load_bus_phases))\
-		                           -sum(sum(dual_iline_max[t,flex]*A_line_wye_flex_list[t][line][line_ph,flex] for line_ph in range(self.network.N_phases)) for line in range(self.network.N_lines)))
-				LMP_P_del_flex[t,flex] = 1/self.dt_market*(#dual_P_del[t,ph]\
-		                           dual_P_slack[t]
-		                           -sum(dual_vbus_max[t,flex]*A_vlim_del_flex_list[t][ph,flex] for ph in range(N_load_bus_phases))\
-		                           +sum(dual_vbus_min[t,flex]*A_vlim_del_flex_list[t][ph,flex] for ph in range(N_load_bus_phases))\
-		                           -sum(sum(dual_iline_max[t,flex]*A_line_del_flex_list[t][line][line_ph,flex] for line_ph in range(self.network.N_phases)) for line in range(self.network.N_lines)))
-				
-			for nd in range(len(participant_all.assets_nd)):
+					LMP_P_wye_flex[t,flex] = 1/self.dt_market*(#dual_P_wye[t,ph]\
+			                           dual_P_slack[t]\
+			                           -sum(dual_vbus_max[t,flex]*A_vlim_wye_flex_list[t][ph,flex] for ph in range(N_load_bus_phases))\
+			                           +sum(dual_vbus_min[t,flex]*A_vlim_wye_flex_list[t][ph,flex] for ph in range(N_load_bus_phases))\
+			                           -sum(sum(dual_iline_max[t,flex]*A_line_wye_flex_list[t][line][line_ph,flex] for line_ph in range(self.network.N_phases)) for line in range(self.network.N_lines)))
+					LMP_P_del_flex[t,flex] = 1/self.dt_market*(#dual_P_del[t,ph]\
+			                           dual_P_slack[t]
+			                           -sum(dual_vbus_max[t,flex]*A_vlim_del_flex_list[t][ph,flex] for ph in range(N_load_bus_phases))\
+			                           +sum(dual_vbus_min[t,flex]*A_vlim_del_flex_list[t][ph,flex] for ph in range(N_load_bus_phases))\
+			                           -sum(sum(dual_iline_max[t,flex]*A_line_del_flex_list[t][line][line_ph,flex] for line_ph in range(self.network.N_phases)) for line in range(self.network.N_lines)))
+					
+				for nd in range(len(participant_all.assets_nd)):
 
-				LMP_P_wye_nd[t,nd] = 1/self.dt_market*(#dual_P_wye[t,ph]\
-		                           dual_P_slack[t]\
-		                           -sum(dual_vbus_max[t,nd]*A_vlim_wye_nd_list[t][ph,nd] for ph in range(N_load_bus_phases))\
-		                           +sum(dual_vbus_min[t,nd]*A_vlim_wye_nd_list[t][ph,nd] for ph in range(N_load_bus_phases))\
-		                           -sum(sum(dual_iline_max[t,nd]*A_line_wye_nd_list[t][line][line_ph,nd] for line_ph in range(self.network.N_phases)) for line in range(self.network.N_lines)))
-				LMP_P_del_nd[t,nd] = 1/self.dt_market*(#dual_P_del[t,ph]\
-		                           dual_P_slack[t]
-		                           -sum(dual_vbus_max[t,nd]*A_vlim_del_nd_list[t][ph,nd] for ph in range(N_load_bus_phases))\
-		                           +sum(dual_vbus_min[t,nd]*A_vlim_del_nd_list[t][ph,nd] for ph in range(N_load_bus_phases))\
-		                           -sum(sum(dual_iline_max[t,nd]*A_line_del_nd_list[t][line][line_ph,nd] for line_ph in range(self.network.N_phases)) for line in range(self.network.N_lines)))
+					LMP_P_wye_nd[t,nd] = 1/self.dt_market*(#dual_P_wye[t,ph]\
+			                           dual_P_slack[t]\
+			                           -sum(dual_vbus_max[t,nd]*A_vlim_wye_nd_list[t][ph,nd] for ph in range(N_load_bus_phases))\
+			                           +sum(dual_vbus_min[t,nd]*A_vlim_wye_nd_list[t][ph,nd] for ph in range(N_load_bus_phases))\
+			                           -sum(sum(dual_iline_max[t,nd]*A_line_wye_nd_list[t][line][line_ph,nd] for line_ph in range(self.network.N_phases)) for line in range(self.network.N_lines)))
+					LMP_P_del_nd[t,nd] = 1/self.dt_market*(#dual_P_del[t,ph]\
+			                           dual_P_slack[t]
+			                           -sum(dual_vbus_max[t,nd]*A_vlim_del_nd_list[t][ph,nd] for ph in range(N_load_bus_phases))\
+			                           +sum(dual_vbus_min[t,nd]*A_vlim_del_nd_list[t][ph,nd] for ph in range(N_load_bus_phases))\
+			                           -sum(sum(dual_iline_max[t,nd]*A_line_del_nd_list[t][line][line_ph,nd] for line_ph in range(self.network.N_phases)) for line in range(self.network.N_lines)))
 
 
-		pickle.dump((LMP_P_wye_nd), open( "Data\\Central\\LMPwye.p", "wb" ) )
-		pickle.dump((LMP_P_del_nd), open( "Data\\Central\\LMPdel.p", "wb" ) )
+			pickle.dump((LMP_P_wye_nd), open( "Results\\Central\\LMPwye.p", "wb" ) )
+			pickle.dump((LMP_P_del_nd), open( "Results\\Central\\LMPdel.p", "wb" ) )
 
 		if len(participant_all.assets_flex):
 			x = np.array(x.value)				
@@ -441,21 +443,22 @@ class Central_market(Market):
 			for asset in par.assets:
 				bus_id = asset.bus_id
 				if asset.type == 'ND':
-					if self.network.bus_df[self.network.bus_df['number']==bus_id]['connect'].values[0]=='Y':
-						price = LMP_P_wye_nd[:, nd]
-					else: price = LMP_P_del_nd[:, nd] 
+					if self.nw_const:
+						if self.network.bus_df[self.network.bus_df['number']==bus_id]['connect'].values[0]=='Y':
+							price = LMP_P_wye_nd[:, nd]
+						else: price = LMP_P_del_nd[:, nd] 
 					#asset.Pnet_ems[self.t_ahead_0:] = asset.mpc_demand(self.t_ahead_0)-p_curt[:, nd]
 					#sch = asset.mpc_demand(self.t_ahead_0)-p_curt[:, nd]
 					#schedules[p_idx].append(asset.mpc_demand(self.t_ahead_0)-p_curt[:, nd])
 					asset.update_ems(p_curt[:, nd], self.t_ahead_0)	
 					schedules[p_idx].append(asset.Pnet_ems[self.t_ahead_0:])
 					sch = asset.Pnet_ems[self.t_ahead_0:]
-
 					nd +=1
 				else:
-					if self.network.bus_df[self.network.bus_df['number']==bus_id]['connect'].values[0]=='Y':
-						price = LMP_P_wye_flex[:, flex]
-					else: price = LMP_P_del_flex[:, flex] 
+					if self.nw_const:
+						if self.network.bus_df[self.network.bus_df['number']==bus_id]['connect'].values[0]=='Y':
+							price = LMP_P_wye_flex[:, flex]
+						else: price = LMP_P_del_flex[:, flex] 
 					asset.update_ems(x[:self.T_market-self.t_ahead_0, flex]+ x[self.T_market-self.t_ahead_0:, flex], self.t_ahead_0)
 					schedules[p_idx].append(asset.Pnet_ems[self.t_ahead_0:])
 					sch = asset.Pnet_ems[self.t_ahead_0:]
@@ -463,8 +466,12 @@ class Central_market(Market):
 				print('*** Adding asset outcome for participant {} to clearing ...'.format(par.p_id))
 				for t in range(self.T_market-self.t_ahead_0):
 					if  sch[t]>0:
+						if not self.nw_const:
+							 price = self.price_imp
 						list_clearing.append([t+self.t_ahead_0, 0, par.p_id, self.dt_market*sch[t], price[t]])
 					elif sch[t]<0:
+						if not self.nw_const:
+							price = self.price_exp
 						list_clearing.append([t+self.t_ahead_0, par.p_id, 0, -self.dt_market*sch[t], price[t]])
 
 				
@@ -554,9 +561,9 @@ class P2P_market(Market):
 				energy_buy = max(participant.Pnet_ems[t] + participant.Pmax[t],0) 
 				energy_sell = min(participant.Pnet_ems[t] + participant.Pmin[t],0) 
 				if energy_buy !=0:
-					list_offers.append([t, participant.p_id, energy_buy, 0])
+					list_offers.append([t, participant.p_id, energy_buy, self.price_exp[t+self.t_ahead_0, participant.p_id-1]])
 				elif energy_sell != 0:
-					list_offers.append([t, participant.p_id, energy_sell, 0]) #-energy_sell?? to check!
+					list_offers.append([t, participant.p_id, energy_sell, self.price_exp[t+self.t_ahead_0, participant.p_id-1]]) #-energy_sell?? to check!
 
 		self.offers = pd.DataFrame(data=list_offers, columns=['time', 'participant', 'energy', 'price'])
 
@@ -708,7 +715,7 @@ class P2P_market(Market):
 			schedule = []
 			for asset in self.participants[i].assets:
 				if asset.type != 'ND':
-					asset.update_ems(par_pref_output_final[i]['p_flex'][:self.T_market-self.t_ahead_0, d]+ par_pref_output_final[i]['p_flex'][self.T_market-self.t_ahead_0:, d], self.t_ahead_0)
+					asset.update_ems(par_pref_output_final[i]['p_flex'][:self.T_market-self.t_ahead_0, d] + par_pref_output_final[i]['p_flex'][self.T_market-self.t_ahead_0:, d], self.t_ahead_0)
 					schedule.append(asset.Pnet_ems[self.t_ahead_0:])
 					d+=1
 				else:
@@ -717,15 +724,11 @@ class P2P_market(Market):
 					asset.update_ems(par_pref_output_final[i]['p_curt'][:, nd], self.t_ahead_0)	
 					schedule.append(asset.Pnet_ems[self.t_ahead_0:])
 					asset.Pnet_ems[self.t_ahead_0:] = asset.Pnet_ems[self.t_ahead_0:] - par_pref_output_final[i]['p_curt'][:, nd] 
-					print('Pnet_ems shape', asset.Pnet_ems.shape)
-					print('par_pref_curt shape', par_pref_output_final[i]['p_curt'][:, nd].shape)
 					nd+=1
 			schedules.append(schedule)
 
 			### populate the last column of trade_list_ems to distinquish btw accepted and rejected trades
 			trade_list_ems_b = trade_list_ems[trade_list_ems[:,trades_buyer_col]== self.participants[i].p_id]
-			#print('trade_list_ems_b', len(trade_list_ems_b))
-			#print('output final qs', len(par_pref_output_final[i]['q_us']))
 			if len(trade_list_ems_b):
 				trade_list_ems_b[:,trades_optimal_col] = np.array(par_pref_output_final[i]['q_us']).reshape(-1)
 				trade_list_ems[trade_list_ems[:,trades_buyer_col]== self.participants[i].p_id] = trade_list_ems_b 
@@ -902,7 +905,8 @@ class P2P_market(Market):
 			          
 			                    )
 		
-		prob.solve(solver='mosek') #, primals=None)
+		prob.solve(solver='gurobi') #, primals=None)
+		#prob.solve(solver='mosek')#, mosek_params={'MSK_IPAR_INFEAS_REPORT_AUTO': "MSK_ON"}, verbosity=2)#, primals=None) 
 		print('P2P optimisation:', prob.status)
 		
 		q_us_full_list = np.zeros([len(trade_list),1])
@@ -934,8 +938,17 @@ class P2P_market(Market):
 
 class Auction_market(Market):
 	def __init__(self, participants, offers, dt_market, T_market, price_imp, t_ahead_0=0, P_import=None, P_export=None, price_exp=None, network=None):
-		Market.__init__(self, participants, offers, dt_market, T_market, price_imp, t_ahead_0=t_ahead_0, P_import=P_import, P_export=P_export, price_exp=price_exp, network=network)
+		Market.__init__(self, participants, dt_market, T_market, price_imp, t_ahead_0=t_ahead_0, P_import=P_import, P_export=P_export, price_exp=price_exp, network=network)
+		self.offers
 
+		self.buyer_indexes, self.seller_indexes = [], [] 
+		for i in range(len(self.offers)):
+			if self.offers['energy'][i]> 0:
+				self.buyer_indexes.append(self.offers['participant'][i])
+			else: self.seller_indexes.append(self.offers['participant'][i])
+
+		self.buyer_indexes = list(set(self.buyer_indexes))
+		self.seller_indexes = list(set(self.seller_indexes))
 	def Auction_matching(self, priority='price'): 
 		"""
 		Returns the outcome of an auction matching highest bid with lowest ask matching
@@ -972,21 +985,21 @@ class Auction_market(Market):
 					Asks = sorted(Asks, key=lambda x: x.price)
 				else:
 					Bids = sorted(Bids, key=lambda x: x.energy)[::-1]
-					Asks = sorted(Asks, key=lambda x: x.energy)[::-1]
+					Asks = sorted(Asks, key=lambda x: x.energy) #energy<0 so assorted ascently than [::-1]
 
 				if Bids[0].price < Asks[0].price:
 					break
 				else:  # Bids[0].Price >= Asks[0].Price:
 					currBid = Bids.pop()
 					currAsk = Asks.pop()
-					if currBid.energy != currAsk.energy:
+					if currBid.energy != np.abs(currAsk.energy):
 						if currBid.energy > currAsk.energy:
-							newBid = {'time': t, 'participant': currBid.participant, 'energy': currBid.energy - currAsk.energy, 'price': currBid.price}
+							newBid = {'time': t, 'participant': currBid.participant, 'energy': currBid.energy - np.abs(currAsk.energy), 'price': currBid.price}
 							Bids.insert(0, newBid)
 							#(currBid.price+currAsk.price+fees[t, currAsk.participant, currBid.participant])/2?
-							list_clearing.append([t, currAsk.participant, currBid.participant, self.dt_market*currAsk.energy, (currBid.price+currAsk.price)/2])
+							list_clearing.append([t, currAsk.participant, currBid.participant, self.dt_market*np.abs(currAsk.energy), (currBid.price+currAsk.price)/2])
 						else:
-							newAsk = {'time': t, 'participant': currAsk.participant, 'energy': currAsk.energy - currBid.energy, 'price': currAsk.price}
+							newAsk = {'time': t, 'participant': currAsk.participant, 'energy': np.abs(currAsk.energy) - currBid.energy, 'price': currAsk.price}
 							Asks.insert(0,newAsk)
 							list_clearing.append([t, currAsk.participant, currBid.participant, self.dt_market*currBid.energy, (currBid.price+currAsk.price)/2])
 		

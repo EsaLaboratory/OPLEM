@@ -130,16 +130,17 @@ class Participant:
 		
 		#### return the Aunique that has the aggregated unique rows, compute at the same time corresponding b for asset0
 		for a, asset in enumerate(assets[1:]): #self.assets_flex[1:]
-			print('Start of the aggregated A, b calculation ...')
+			#print('Start of the aggregated A, b calculation ...')
 			A, b = asset.polytope(t0)
 			for index in range(A.shape[0]):
 				if not (np.any(np.all(A[index] == Aunique, axis=1))):
-					print('index:', index)
+					#print('index:', index)
 					b_new = self._find_b(A0, b0, A[index])
 					Aunique = np.concatenate((Aunique, np.expand_dims(A[index], axis=0)), axis=0)
 					#b0  = np.append(b0, b_new)	
 					list_b[0] = np.append(list_b[0], b_new) #.append(b_new)	
-		print('end for asset 0, Aunique shape:', Aunique.shape, 'b:', list_b[0].shape)
+		#print('end for asset 0, Aunique shape:', Aunique.shape, 'b:', list_b[0].shape)
+
 		#################### compute new b corresponding to Aunique for the other assets #######################################
 		for a, asset in enumerate(assets[1:]): #self.assets_flex[1:]
 			A, b = asset.polytope(t0)  
@@ -163,11 +164,10 @@ class Participant:
 		x = pic.RealVariable('x', A1.shape[1])
 		prob.add_constraint(A1*x<= b1)
 		prob.set_objective('max', sum(a*x.T))
-		prob.set_option('solver','mosek')
-		prob.solve() #solver='mosek'
+		prob.solve(solver='gurobi') #
 		return prob.value
 
-	def polytope_desagregation(self, p_agg, assets, t_ahead_0=0):
+	def power_desaggregation(self, p_agg, assets, t_ahead_0=0):
 		"""
 		produces a feasible power vector for each asset in the list from the aggregated power schedule p_agg.
 		from "A concise, approximate representation of a collection of loads described by polytopes"
@@ -185,6 +185,8 @@ class Participant:
 			list od feasible power vector for each asset
 
 		"""
+
+		"""
 		if len(p_agg) == self.T_ems-t_ahead_0:
 			p_agg_new = []
 			for i in range(len(p_agg)):
@@ -196,6 +198,7 @@ class Participant:
 					p_agg_new.append(p_agg[i])
 
 			p_agg = np.array(p_agg_new)
+		"""
 
 		prob = pic.Problem()
 		x = pic.RealVariable('x', (2*(self.T_ems-t_ahead_0), len(assets)))   #self.assets_flex
@@ -207,13 +210,15 @@ class Participant:
 		prob.add_list_of_constraints([x_aux[t] == p_agg[t] - sum(x[t,:])  for t in range(2*(self.T_ems-t_ahead_0))])
 
 		prob.set_objective('min', abs(x_aux) )
-		prob.solve()
+		prob.solve(solver='mosek')
 		#print('x disagg:', x.value)
 
+		opt = True
 		if prob.status != 'optimal':
-			return print('the desaggregation could not find a feasible solution')
-		else: #####!!!!!!!!!!!!!!!!!! some values are neeear zeros, convert to zero before proceeding!!!!!!!!!!!!!!!!!!
-			return x.value
+			print('the desaggregation could not find a feasible solution')
+			opt =False
+		#####!!!!!!!!!!!!!!!!!! some values are neeear zeros, convert to zero before proceeding!!!!!!!!!!!!!!!!!!
+		return np.array(x.value), opt
               
 	def nd_demand(self, t0):
 		"""
@@ -338,23 +343,18 @@ class Participant:
 
 		#outputs = []
 		for a, asset in enumerate(self.assets_flex):
-			if asset.type=='building':
-				asset.update_ems(x[:self.T_ems-t_ahead_0, a] - x[self.T_ems-t_ahead_0:,a], t_ahead_0, enforce_const=False)
-				#outputs.append(asset.Tin_ems)
-			else: 
-				asset.update_ems(x[:self.T_ems-t_ahead_0, a] + x[self.T_ems-t_ahead_0:,a], t_ahead_0, enforce_const=False)
-				#outputs.append(asset.E_ems)
+			asset.update_ems(x[:self.T_ems-t_ahead_0, a] + x[self.T_ems-t_ahead_0:,a], t_ahead_0, enforce_const=False)
 		for a, asset in enumerate(self.assets_nd):
 			asset.update_ems(p_curt[:, a], t_ahead_0)	
 
 		schedule = []
 		nd=0
 		for asset in self.assets:
-			if asset.type != 'ND':
-				schedule.append(asset.Pnet_ems[t_ahead_0:])
-			else: #if asset.type == 'ND' 
-				schedule.append(asset.mpc_demand(t_ahead_0)-p_curt[:, nd])
-				nd+=1
+			#if asset.type != 'ND':
+			schedule.append(asset.Pnet_ems[t_ahead_0:])
+			#else: #if asset.type == 'ND' 
+			#	schedule.append(asset.mpc_demand(t_ahead_0)-p_curt[:, nd])
+			#	nd+=1
 		return schedule, np.array(Pimp.value), np.array(Pexp.value), buses
 
 

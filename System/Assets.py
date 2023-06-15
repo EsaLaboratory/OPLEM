@@ -307,7 +307,7 @@ class BuildingAsset(Asset):
         --------
         (A, b):  (2 dim numpy.ndarray, 1-dim numpy.ndarray)
         """
-        ######  Gamma version 1, Pcool >=0  Pnet = Pheat+Pcool
+        ######  Gamma version 1, Pcool <=0  Pnet = Pheat-Pcool
         Gamma = toeplitz(self.alpha**np.arange(self.T_ems-t0), np.zeros(self.T_ems-t0))
 
         col1 = np.concatenate((np.identity(self.T_ems-t0), 
@@ -322,18 +322,18 @@ class BuildingAsset(Asset):
                                np.zeros((self.T_ems-t0,self.T_ems-t0)), 
                                np.identity(self.T_ems-t0), 
                                -1*np.identity(self.T_ems-t0),
-                               -self.CoP_cooling*Gamma,#self.dt_ems*
-                               self.CoP_cooling*Gamma #self.dt_ems*
+                               self.CoP_cooling*Gamma,#self.dt_ems*
+                               -self.CoP_cooling*Gamma #self.dt_ems*
                                ), axis=0)
 
         A = np.concatenate((col1, col2), axis=1)
 
-        Ta_discount = np.zeros(self.T_ems-t0)
+        Ta_discount =np.zeros(self.T_ems-t0)
         Ta_discount[0] = self.Ta_ems[t0] #
         for t in range(1,self.T_ems-t0): #-t0 added for receiding horizon
             ### Sigma_t=1^j alpha**(j-t)*Ta[t]
-            Ta_discount[t] = np.dot(Gamma[t, :t+1],self.Ta_ems[t0:t0+t+1]) # np.dot(Gamma[t, :t+1],self.Ta_ems[t0:t0+t+1])  
-            #Ta_discount[t] = np.dot(Gamma[t-1, :t],self.Ta_ems[t0:t0+t]) this works better but it's WRONG !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            Ta_discount[t] = np.dot(Gamma[t, :t+1],self.Ta_ems[t0:t0+t+1])   #Gamma[t, :t+1], self.Ta_ems[t0:t0+t+1]
+            #Ta_discount[t] = np.dot(Gamma[t-1, :t],self.Ta_ems[t0:t0+t]) 
 
         T0_discount = self.alpha*self.T0*np.flip(Gamma[-1]) #T0*[alpha, ...., alpha^Tems]
         T0_discount = T0_discount[t0:] #added for receiding horizon
@@ -342,8 +342,8 @@ class BuildingAsset(Asset):
         min_bound = -(self.Tmin[t0:] - T0_discount - self.gamma*Ta_discount)/self.beta 
         b= np.concatenate((self.Hmax*np.ones(self.T_ems-t0),
                            np.zeros(self.T_ems-t0), 
-                           self.Cmax*np.ones(self.T_ems-t0),
                            np.zeros(self.T_ems-t0),
+                           self.Cmax*np.ones(self.T_ems-t0),
                            max_bound,
                            min_bound, 
                            ), axis=0)
@@ -448,6 +448,7 @@ class BuildingAsset(Asset):
 
         prob = pic.Problem()
         P_peak = pic.RealVariable('P_peak')
+        """
         P_cool = pic.RealVariable('P_cool',self.T_ems)
         P_heat = pic.RealVariable('P_heat',self.T_ems)
         T_in = pic.RealVariable('T_in',self.T_ems)
@@ -463,10 +464,15 @@ class BuildingAsset(Asset):
         prob.add_list_of_constraints([T_in[t] == self.alpha*T_in[t-1] + self.beta*(self.CoP_heating*P_heat[t-1]-self.CoP_cooling*P_cool[t-1]) + self.gamma*self.Ta_ems[t-1] for t in range(1,self.T_ems)])
         prob.add_constraint(T_in >= self.Tmin )
         prob.add_constraint(T_in <= self.Tmax )
-        
+        """
+        P = pic.RealVariable('P', 2*self.T_ems)
+        A,b = self.polytope()
+        prob.add_constraint(A*P<=b)
+        prob.add_list_of_constraints([P_peak >= P[t] + P[t+self.T_ems] for t in range(self.T_ems)])  #+ ot -: both P_c and P_h >=0 so +
+
         prob.set_objective('min', P_peak)
         prob.solve(solver='mosek', primals=None) #, primals=None) 
-        P_th = [P_heat.value[i]+P_cool.value[i] for i in range(self.T_ems)]
+        P_th = [P.value[i]+P.value[self.T_ems+i] for i in range(self.T_ems)]  #+ ot -
         return P_th
 
     def toup_baseline(self, toup):
@@ -483,6 +489,7 @@ class BuildingAsset(Asset):
             schedule of HVAC
         """ 
         prob = pic.Problem()
+        """
         P_cool = pic.RealVariable('P_cool',self.T_ems)
         P_heat = pic.RealVariable('P_heat',self.T_ems)
         T_in = pic.RealVariable('T_in',self.T_ems)
@@ -498,12 +505,16 @@ class BuildingAsset(Asset):
         prob.add_constraint(T_in[1:] <= self.Tmax[1:] )
 
         prob.set_objective('min', sum((P_heat[t] + P_cool[t])*toup[t] for t in range(self.T_ems))) #
+        """
+        P = pic.RealVariable('P', 2*self.T_ems)
+        A,b = self.polytope()
+        prob.add_constraint(A*P<=b)
+        prob.set_objective('min', sum((P[t] + P[t+self.T_ems])*toup[t] for t in range(self.T_ems))) 
 
         prob.solve(solver='mosek', primals=None)  #) 
 
-        P_th = [P_heat.value[i]-P_cool.value[i] for i in range(self.T_ems)]
-        Pnet = [P_heat.value[i]+P_cool.value[i] for i in range(self.T_ems)]
-        return P_th, Pnet, prob.value
+        P_th = [P.value[i]+P.value[self.T_ems+i] for i in range(self.T_ems)]  
+        return P_th
 
     def flexibility(self, T_flex, flex_min=None, flex_type='up'):
         """
@@ -524,13 +535,14 @@ class BuildingAsset(Asset):
 
         prob = pic.Problem()
         Flex = pic.RealVariable('flex', 1)
+        """
         P_cool = pic.RealVariable('P_cool',self.T_ems)
         P_heat = pic.RealVariable('P_heat',self.T_ems)
         T_in = pic.RealVariable('T_in',self.T_ems)
         #Soft_min = pic.RealVariable('Soft_min',self.T_ems)
         #Soft_max = pic.RealVariable('Soft_max',self.T_ems)
 
-        prob.add_constraint(Flex >= 0)
+        
         prob.add_constraint(P_cool >= 0 )
         prob.add_constraint(P_cool <= self.Cmax )
         prob.add_constraint(P_heat >= 0 )
@@ -545,9 +557,20 @@ class BuildingAsset(Asset):
         #Penalty = 1e2
 
         if flex_type=='up':
-            prob.add_list_of_constraints([Flex <= self.Pnet[t] - (P_heat[t] + P_cool[t]) for t in T_flex])           
+            prob.add_list_of_constraints([Flex <= self.Pnet_ems[t] - (P_heat[t] + P_cool[t]) for t in T_flex])           
         else:           
-            prob.add_list_of_constraints([Flex <= (P_heat[t] + P_cool[t]) - self.Pnet[t] for t in T_flex]) 
+            prob.add_list_of_constraints([Flex <= (P_heat[t] + P_cool[t]) - self.Pnet_ems[t] for t in T_flex]) 
+        """
+
+        P = pic.RealVariable('P', 2*self.T_ems) #P_heat[:, T_ems], P_cool[T_ems:]
+        A,b = self.polytope()
+
+        prob.add_constraint(A*P<=b)
+        prob.add_constraint(Flex >= 0)
+        if flex_type=='up':
+            prob.add_list_of_constraints([Flex <= self.Pnet_ems[t] - (P[t] + P[t+self.T_ems]) for t in T_flex])           
+        else:           
+            prob.add_list_of_constraints([Flex <= (P[t] + P[t+self.T_ems]) - self.Pnet_ems[t] for t in T_flex]) 
         
         prob.set_objective('max', Flex)
 
@@ -1037,22 +1060,33 @@ class NondispatchableAsset(Asset):
 
         self.curt = curt
 
-    def mpc_demand(self, t0=0):
+    def mpc_demand(self, t0=0, q_val=False):
         """
-        a power vector composed of the actual realisiation of the current time step and the predicted values for the future time steps
+        a power vector composed of the actual realisation of the current time step and the predicted values for the future time steps
         Parameters
         ---------------
         t0: int default=0
             first time slot of observation
+        q_val: boo, default false
+            returns reactive power values or not
         Returns
         ----------------
         demand: np.array
             power vector
+        qdemand: np.array
+            reactive power vector
         """
-        demand = np.zeros(self.T_ems-t0)
+        demand, qdemand = np.zeros(self.T_ems-t0), np.zeros(self.T_ems-t0)
         demand[0]=self.Pnet_ems[t0]
         demand[1:]=self.Pnet_ems_pred[t0+1:]
-        return demand
+
+        qdemand[0]=self.Qnet_ems[t0]
+        qdemand[1:]=self.Qnet_ems_pred[t0+1:]
+
+        if q_val: 
+            return demand, qdemand
+        else:
+            return demand
 
     def update_ems(self, curt, t0=0):
         """
@@ -1069,7 +1103,7 @@ class NondispatchableAsset(Asset):
             for t in range(int(t0*self.dt_ems/self.dt), int((t0+1)*self.dt_ems/self.dt)):
                 self.Pnet[t] -= curt
         else:
-            for t_ems in range(t0, len(Pnet_ems)):
+            for t_ems in range(t0, len(curt)):
                 for t in range(int(t_ems*self.dt_ems/self.dt), int((t_ems+1)*self.dt_ems/self.dt)):
                     self.Pnet[t] -= curt[t_ems-t0]
 

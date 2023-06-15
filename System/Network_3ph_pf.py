@@ -465,15 +465,20 @@ class Network_3ph:
             dt_ems = assets_flex[0].dt_ems
 
         #Assemble P_demand out of P actual and P predicted and convert to EMS time series scale
-        P_demand = np.zeros([T_ems-t0,len(assets_nd)])
-        Q_demand = np.zeros([T_ems-t0,len(assets_nd)])
-        for i in range(len(assets_nd)):
-            if t_ems == t0:
-                P_demand[t_ems-t0, i] = np.mean(assets_nd[i].Pnet[t_ems*int(dt_ems/dt) : (t_ems+1)*int(dt_ems/dt)])
-                Q_demand[t_ems-t0, i] = np.mean(assets_nd[i].Qnet[t_ems*int(dt_ems/dt) : (t_ems+1)*int(dt_ems/dt)])
-            else:
-                P_demand[t_ems-t0, i] = np.mean(assets_nd[i].Pnet_pred[t_ems*int(dt_ems/dt) : (t_ems+1)*int(dt_ems/dt)])
-                Q_demand[t_ems-t0, i] = np.mean(assets_nd[i].Qnet_pred[t_ems*int(dt_ems/dt) : (t_ems+1)*int(dt_ems/dt)])
+        #P_demand = np.zeros([T_ems-t0,len(assets_nd)])
+        #Q_demand = np.zeros([T_ems-t0,len(assets_nd)])
+        #for i in range(len(assets_nd)):
+            #P_demand[:,i] , Q_demand[:,i] = assets_nd[i].mpc_demand(t0, q_val=True)
+         #   if t_ems == t0:
+          #      P_demand[t_ems-t0, i] = assets_nd[i].Pnet_ems[t_ems]
+                #np.mean(assets_nd[i].Pnet[t_ems*int(dt_ems/dt) : (t_ems+1)*int(dt_ems/dt)])
+           #     Q_demand[t_ems-t0, i] = assets_nd[i].Qnet_ems[t_ems]
+                #np.mean(assets_nd[i].Qnet[t_ems*int(dt_ems/dt) : (t_ems+1)*int(dt_ems/dt)])
+            #else:
+             #   P_demand[t_ems-t0, i] = 
+                #np.mean(assets_nd[i].Pnet_pred[t_ems*int(dt_ems/dt) : (t_ems+1)*int(dt_ems/dt)])
+              #  Q_demand[t_ems-t0, i] = 
+                #np.mean(assets_nd[i].Qnet_pred[t_ems*int(dt_ems/dt) : (t_ems+1)*int(dt_ems/dt)])
 
         #Set up Matrix linking nondispatchable assets to their bus and phase
         G_wye_nondispatch,  G_del_nondispatch = self.get_Gs(assets_nd) #nondispatch
@@ -494,13 +499,20 @@ class Network_3ph:
             phases_i = assets_nd[i].phases
             for ph_i in np.nditer(phases_i):
                 bus_ph_index = 3*(bus_id-1) + ph_i
-                P_lin_buses[bus_id,ph_i] +=\
-                (G_wye_nondispatch[bus_ph_index,i]+\
-                 G_del_nondispatch[bus_ph_index,i])*P_demand[t_ems-t0, i]
-                #print('G_wye_nondispatch[bus_ph_index,i]', G_wye_nondispatch[bus_ph_index,i], 'G_del_nondispatch[bus_ph_index,i]', G_del_nondispatch[bus_ph_index,i])
-                Q_lin_buses[bus_id,ph_i] +=\
-                (G_wye_nondispatch[bus_ph_index,i]+\
-                 G_del_nondispatch[bus_ph_index,i])*Q_demand[t_ems-t0, i]
+                if t_ems == t0:
+                    P_lin_buses[bus_id,ph_i] +=\
+                    (G_wye_nondispatch[bus_ph_index,i]+\
+                     G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Pnet_ems[t_ems] #P_demand[t_ems-t0, i]
+                    Q_lin_buses[bus_id,ph_i] +=\
+                    (G_wye_nondispatch[bus_ph_index,i]+\
+                     G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Qnet_ems[t_ems] #Q_demand[t_ems-t0, i]
+                else:
+                    P_lin_buses[bus_id,ph_i] +=\
+                    (G_wye_nondispatch[bus_ph_index,i]+\
+                     G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Pnet_ems_pred[t_ems] #P_demand[t_ems-t0, i]
+                    Q_lin_buses[bus_id,ph_i] +=\
+                    (G_wye_nondispatch[bus_ph_index,i]+\
+                     G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Qnet_ems_pred[t_ems]
 
         #set up a copy of the network for MPC interval t
         network_t = copy.deepcopy(self)#.network)
@@ -746,7 +758,6 @@ class Network_3ph:
                              + np.matmul(np.conj\
                                          (network_t.Ysn),\
                                          np.conj(network_t.M0)))))
-
         
         # Voltage magnitude constraints
         A_vlim_nd = np.matmul(network_t.K_wye,G_wye_nondispatch_PQ)\
@@ -789,17 +800,12 @@ class Network_3ph:
         S_PQ_wye = np.zeros([self.Y.shape[0]],dtype=np.complex_) 
         #S of PQ loads (delta)
         S_PQ_del = np.zeros([self.Y.shape[0]],dtype=np.complex_) 
-        
-        #t = time.time() 
+
         S_loads[0::3]=(self.bus_df['Pa']+ self.bus_df['Qa']*1j)[1:].values*1e3
         S_loads[1::3]=(self.bus_df['Pb']+ self.bus_df['Qb']*1j)[1:].values*1e3
         S_loads[2::3]=(self.bus_df['Pc']+ self.bus_df['Qc']*1j)[1:].values*1e3
 
         S_loads = np.nan_to_num(S_loads)
-
-        #print('S_loads 0 nan:', np.any(np.isnan(S_loads[0::3])))
-        #print('S_loads 1 nan:', np.any(np.isnan(S_loads[1::3])))
-        #print('S_loads 2 nan:', np.any(np.isnan(S_loads[2::3])))
 
         for bus_i in range(1,len(self.bus_df)):
 #            #not including slack bus (bus 0)
