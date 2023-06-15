@@ -7,10 +7,10 @@ Assets
 .. automodule:: System.Assets
   :members:
 
-Energy System
---------------
+Networks
+---------
 
-.. automodule:: System.EnergySystem
+.. automodule:: System.Network_3ph_pf
   :members:
 
 Markets
@@ -18,9 +18,11 @@ Markets
 
 .. automodule:: System.Markets
   :members:
-
-Networks
+  
+Participant
 ---------
 
-.. automodule:: System.Network_3ph_pf
+.. automodule:: System.Participant
   :members:
+
+
