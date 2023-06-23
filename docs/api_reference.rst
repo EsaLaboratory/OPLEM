@@ -16,7 +16,7 @@ Networks
 Markets
 ---------
 
-.. automodule:: System.Markets
+.. automodule:: System.Market
   :members:
   
 Participant
