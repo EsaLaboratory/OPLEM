@@ -37,20 +37,6 @@ The simplest way to start is to duplicate one of the case study main.py files:
 - OxEMF_EV_case_study_v6.py
 - Main_building_casestudy.py
 
-Dependencies
-------------
-
-* `Pandas <https://pandas.pydata.org/>`_
-* `scipy <https://www.scipy.org/>`_
-* `cvxopt <https://cvxopt.org/>`_
-* `scikit-learn <https://scikit-learn.org/stable/>`_
-* `Pandapower <https://pandapower.readthedocs.io/en/v1.6.0/>`_
-* `Numpy <http://www.numpy.org/>`_
-* `Picos = 1.1.2 <https://picos-api.gitlab.io/picos/>`_
-* `Matplotlib <https://matplotlib.org/>`_
-* `numba <http://numba.pydata.org/numba-doc/latest/index.html/>`_
-* `requests <http://docs.python-requests.org/en/master/>`_
-
 Platform Structure
 --------------------
 
