@@ -1,5 +1,5 @@
 """
-This module presents a participant
+This module presents a participant.
 A participant can be either a prosumer, an aggregator or an energy provider
 
 """
@@ -11,11 +11,22 @@ import picos as pic
 
 class Participant:
 	"""
-	p_id: unique identifier for a participant
-	assets: a list of assets managed by the participant
+
+	Parameters
+	-----------
+	p_id : int
+		unique identifier for a participant
+	assets : a list of assets' objects
+		assets managed by the participant
 			assets located in the same bus => prosumer
 			assets in different buses => aggregator
+
+	Returns
+	---------
+	Participant
+
 	"""
+	
 	def __init__(self, p_id, assets, *args):
 		self.p_id = p_id
 		self.assets = assets
@@ -111,15 +122,18 @@ class Participant:
                  and P_in/out is the power into and out of the assets over the optimisation horizon T_ems
                  P_ch>=0 P_dis<0
         from "A concise, approximate representation of a collection of loads described by polytopes"
+        
         Parameters:
         -----------
-        assets: list 
+        assets : list 
         	list of assets objects
-        t0: int, default=0
+        t0 : int, default=0
         	first time slot of aggregation in an optimisation time scale
-        returns
+
+        Returns
         --------
         (A_agg, b_agg):  (2 dim numpy.ndarray, 1-dim numpy.ndarray)
+
         """
 
 		list_b = [np.empty(0)]*len(assets) #self.assets_flex
@@ -134,12 +148,10 @@ class Participant:
 			A, b = asset.polytope(t0)
 			for index in range(A.shape[0]):
 				if not (np.any(np.all(A[index] == Aunique, axis=1))):
-					#print('index:', index)
 					b_new = self._find_b(A0, b0, A[index])
 					Aunique = np.concatenate((Aunique, np.expand_dims(A[index], axis=0)), axis=0)
 					#b0  = np.append(b0, b_new)	
 					list_b[0] = np.append(list_b[0], b_new) #.append(b_new)	
-		#print('end for asset 0, Aunique shape:', Aunique.shape, 'b:', list_b[0].shape)
 
 		#################### compute new b corresponding to Aunique for the other assets #######################################
 		for a, asset in enumerate(assets[1:]): #self.assets_flex[1:]
@@ -151,7 +163,6 @@ class Participant:
 					list_b[a+1] = np.append(list_b[a+1], b[i])
 
 				else:
-					#print(Aunique.shape, A.shape, b.shape) #, Aunique[index], A, b)
 					b_new = self._find_b(A, b, Aunique[index])
 					#A = np.concatenate((A, np.expand_dims(Aunique[index], axis=0)), axis=0)
 					#b = np.append(b, b_new)
@@ -160,44 +171,37 @@ class Participant:
 		return Aunique, np.sum(np.asarray(list_b), axis=0)
 
 	def _find_b(self, A1, b1, a):
+		a=np.expand_dims(a, axis=1)
 		prob = pic.Problem()
 		x = pic.RealVariable('x', A1.shape[1])
 		prob.add_constraint(A1*x<= b1)
-		prob.set_objective('max', sum(a*x.T))
-		prob.solve(solver='gurobi') #
+		prob.set_objective('max', sum(a.T*x)) #'max'
+		prob.solve(solver='mosek')#, verbosity=2,mosek_params={'MSK_IPAR_INFEAS_REPORT_AUTO':'MSK_ON'}) #
+
+		x= x.value
 		return prob.value
 
 	def power_desaggregation(self, p_agg, assets, t_ahead_0=0):
 		"""
 		produces a feasible power vector for each asset in the list from the aggregated power schedule p_agg.
 		from "A concise, approximate representation of a collection of loads described by polytopes"
+
 		Parameters
 		----------
-		p_agg: numpy.ndarray
+		p_agg : numpy.ndarray
 			a vector containing the aggregated power injection or absoption for each time period over the optimisation horizon [t_ahead_0, T_ems]
-		assets: list
+		assets : list
 			list of assets objects in the aggregation
-		t_ahead_0: int, default =0
+		t_ahead_0 : int, default =0
         	first time slot of aggregation in an optimisation time scale
-		returns
+
+		Returns
 		----------
-		list_of_p: list of numpy.ndarray
-			list od feasible power vector for each asset
+		p_disagg : numpy.ndarray
+			2 dimension array of the disaggregated power schedules
+			1st dim: time
+			2nd dim: assets
 
-		"""
-
-		"""
-		if len(p_agg) == self.T_ems-t_ahead_0:
-			p_agg_new = []
-			for i in range(len(p_agg)):
-				if p_agg[i] >0:
-					p_agg_new.append(p_agg[i])
-					p_agg_new.append(0)
-				else:
-					p_agg_new.append(0)
-					p_agg_new.append(p_agg[i])
-
-			p_agg = np.array(p_agg_new)
 		"""
 
 		prob = pic.Problem()
@@ -211,7 +215,6 @@ class Participant:
 
 		prob.set_objective('min', abs(x_aux) )
 		prob.solve(solver='mosek')
-		#print('x disagg:', x.value)
 
 		opt = True
 		if prob.status != 'optimal':
@@ -222,33 +225,51 @@ class Participant:
               
 	def nd_demand(self, t0):
 		"""
-        a power vector composed of the actual realisiation of the current time step and the predicted values for the future time steps for all
+        a power vector composed of the actual realisation of the current time step and the predicted values for the future time steps for all
         the non dispatchale assets of the participant
+
         Parameters
         ---------------
-        t0: int default=0
+        t0 : int default=0
             first time slot of observation
+
         Returns
         ----------------
         P_demand: np.array
             power vector
+
         """
+
 		#Assemble P_demand out of P actual and P predicted and convert to EMS time series scale
 		P_demand = np.zeros([self.T_ems-t0,len(self.assets_nd)])
 		for i in range(len(self.assets_nd)):
-			"""
-			for t_ems in range(t0, self.T_ems):
-				if t_ems == t0:
-					P_demand[t_ems-t0,i] = np.mean(self.assets_nd[i].Pnet[t_ems*int(self.dt_ems/self.dt) : (t_ems+1)*int(self.dt_ems/self.dt)])
-				    #Q_demand[t_ems-t0, i] = np.mean(assets_nd[i].Qnet[t_ems*int(dt_ems/dt) : (t_ems+1)*int(dt_ems/dt)])
-				else:
-					P_demand[t_ems-t0, i] = np.mean(self.assets_nd[i].Pnet_pred[t_ems*int(self.dt_ems/self.dt) : (t_ems+1)*int(self.dt_ems/self.dt)])
-				    #Q_demand[t_ems-t0, i] = np.mean(assets_nd[i].Qnet_pred[t_ems*int(dt_ems/dt) : (t_ems+1)*int(dt_ems/dt)])
-			"""
 			P_demand[:,i]= self.assets_nd[i].mpc_demand(t0)
-			return P_demand
+		
+		return P_demand
 
-	def EMS(self, price_imp, P_import, P_export, price_exp, t_ahead_0=0, network=None):
+	def EMS(self, price_imp, P_import, P_export, price_exp, t_ahead_0=0):
+		"""
+		runs an energy management program to optimise schedules of the participant' assets
+
+		Parameters
+		------------
+		price_imp : 1d array
+			import prices per bus (£/kW)
+		P_import : 1d array
+			limit of import  (kW)
+		P_export : 1d array
+			limit of export per bus (kW)
+		price_exp : 1d array
+			export prices per bus (£/KW)
+		t_ahead_0 : int, default=0
+			starting time of the optimisation (<T_ems)
+
+		Returns
+		---------
+		schedules : list of arrays
+			list of assets' schedules
+
+		"""
 		
 		buses = []
 		for asset in self.assets:
@@ -332,7 +353,6 @@ class Participant:
 			prob.set_objective('min', sum(self.dt_ems*prices_import[:, bidx].T*Pimp[:, bidx] - self.dt_ems*prices_export[:, bidx].T*Pexp[:, bidx] for bidx in range(len(buses)))
 				                  )
 		
-		#prob.set_option('solver','mosek')#gurobi
 		prob.solve(solver='mosek')
 		
 		print('* Updating resources for participant {}...'.format(self.p_id))
@@ -341,20 +361,17 @@ class Participant:
 		if len(self.assets_nd):
 			p_curt = np.array(p_curt.value)
 
-		#outputs = []
 		for a, asset in enumerate(self.assets_flex):
-			asset.update_ems(x[:self.T_ems-t_ahead_0, a] + x[self.T_ems-t_ahead_0:,a], t_ahead_0, enforce_const=False)
+			if asset.type =='storage': #isinstance(asset, Asset.StorageAsset):
+				asset.update_ems(x[:self.T_ems-t_ahead_0, a] + x[self.T_ems-t_ahead_0:,a], t_ahead_0, enforce_const=False)
+			else: asset.update_ems(x[:self.T_ems-t_ahead_0, a] - x[self.T_ems-t_ahead_0:,a], t_ahead_0, enforce_const=False)
 		for a, asset in enumerate(self.assets_nd):
 			asset.update_ems(p_curt[:, a], t_ahead_0)	
 
 		schedule = []
-		nd=0
 		for asset in self.assets:
-			#if asset.type != 'ND':
 			schedule.append(asset.Pnet_ems[t_ahead_0:])
-			#else: #if asset.type == 'ND' 
-			#	schedule.append(asset.mpc_demand(t_ahead_0)-p_curt[:, nd])
-			#	nd+=1
+			
 		return schedule, np.array(Pimp.value), np.array(Pexp.value), buses
 
 
