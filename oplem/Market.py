@@ -6,11 +6,14 @@ OPEN Market Module.
 The OPEN Market class has two types of markets:
 (1) Energy markets, and 
 (2) Flexibility markets
+
 (1) The energy market comes with subclasses of the common types of energy markets:
+
 (i) central market
 (ii) time of use market
 (iii) P2P market
 (iiii) auction market
+
 (2) The flexibility markets comes with one market
 (i) Capacity limits market
 
@@ -31,6 +34,7 @@ class Market:
 	def __init__(self, participants, dt_market, T_market, price_imp, t_ahead_0=0, P_import=None, P_export=None, price_exp=None, network=None):
 		"""
 	    Base Market Class
+
 	    Parameters
 	    ----------
 	    participants : list of objects
@@ -39,18 +43,21 @@ class Market:
 	        Market horizon
 	    dt_market : float
 	        time interval duration (hours)
-		P_import: numpy.ndarray
+		P_import : numpy.ndarray
 			max import from the grid (kW)
-		price_imp: numpy.ndarray
+		price_imp : numpy.ndarray
 			import prices from the grid (£/kWh)
-		P_export: numpy.ndarray
+		P_export : numpy.ndarray
 			max export to the grid (kW)
-		price_exp: numpy.ndarray
+		price_exp : numpy.ndarray
 			export prices to the grid (£/kWh)
+	    
 	    Returns
 	    -------
 	    Market object
+	    
 	    """
+		
 		self.participants = participants
 		self.dt_market = dt_market
 		self.T_market = T_market
@@ -75,11 +82,13 @@ class Market:
 	def simulate_network_pp(self, single_iter=False):
 		"""
 		simulate the power flow of the network if the network is created using pandaspower
+
 		Parameters:
 		--------------
-		single_iter: bool, default False
+		single_iter : bool, default False
 			False: simulate network power flow for the remaining time steps of the horizon [t_ahead_0, T_market]
 			True: simulate network power flow for a single optimisation time step t_ahead_0
+		
 		Returns
 		----------
 		output: dict
@@ -90,7 +99,9 @@ class Market:
             buses_Qnet : Reactive power at bus (kVAR)
             Pnet_market : Real power seen by the market (kW)
             Qnet_market : Reactive power seen by the market (kVAR)		
+
 		"""
+
 		assets_all = []
 		for par in self.participants:
 		    for asset in par.assets:
@@ -150,14 +161,16 @@ class Market:
 	def simulate_network_3ph(self, single_iter=False):
 		"""
 		simulate the power flow of the network if the network is created using Network_3ph() class
+
 		Parameters
 		-------------
-		single_iter: bool, default False
+		single_iter : bool, default False
 			False: simulate network power flow for the remaining time steps of the horizon [t_ahead_0, T_market]
 			True: simulate network power flow for a single optimisation time step t_ahead_0
+		
 		Returns
 		----------
-		network_pf: list
+		network_pf : list
 			the resulting network object for [t_ahead_0, T_market] time steps
 		
 		"""
@@ -215,15 +228,18 @@ class Central_market(Market):
 				 t_ahead_0=0, P_import=None, P_export=None, price_exp=None, network=None, nw_const=True):
 		Market.__init__(self, participants, dt_market, T_market, price_imp, t_ahead_0=t_ahead_0, P_import=P_import, P_export=P_export, price_exp=price_exp, network=network)
 		self.nw_const = nw_const
+	
 	def market_clearing(self, v_unconstrained_buses=[], i_unconstrained_lines=[]):
 		"""
 		computes assets schedules based on central optimisation
+
 		Parameters
 		-----------
-		v_unconstained_buses: list, default =[]
+		v_unconstained_buses : list, default =[]
 			the list of unconstained buses in the network 
-		i_unconstained_lines: list, default =[]
+		i_unconstained_lines : list, default =[]
 			the list of unconstained lines in the network
+
 		Returns
 		------------
 		market_clearing_outcome: pd.dataframe
@@ -241,6 +257,7 @@ class Central_market(Market):
 	    	exported power upstream
 
 		"""
+
 		buses = [] 
 		assets_all = []
 		for par in self.participants:
@@ -250,7 +267,6 @@ class Central_market(Market):
 		buses = list(set(buses))
 		
 	    ##create a participant with all the assets
-		#participant_all = Participant(len(self.participants)+2, assets_all)
 		participant_all = Participant.Participant(len(self.participants)+2, assets_all)
 		P_demand = participant_all.nd_demand(self.t_ahead_0)
 		P_demand = np.sum(P_demand, axis=1)
@@ -356,7 +372,7 @@ class Central_market(Market):
     	                       	*(x[t, i] - x[t+self.T_market-self.t_ahead_0, i]) for i in range(len(participant_all.assets_flex)) for t in range(self.T_market-self.t_ahead_0) ) \
     	                      
     				  )
-
+		print('Solving the program...')
 		prob.solve(solver='mosek')
 		print('Optimisation status:', prob.status, prob.value)
 		
@@ -378,7 +394,7 @@ class Central_market(Market):
 				const_index += 1
 
 				for bus_ph_index in range(N_load_bus_phases):
-					if int(bus_ph_index/3) not in (np.array(v_unconstrained_buses)-1):
+					if int(bus_ph_index/3) not in v_unconstrained_buses:
 						dual_vbus_max[t,bus_ph_index] = np.squeeze(prob.get_constraint(const_index).dual)
 						const_index += 1
 						dual_vbus_min[t,bus_ph_index] = np.squeeze(prob.get_constraint(const_index).dual)
@@ -397,35 +413,53 @@ class Central_market(Market):
 
 			LMP_P_wye_nd = np.zeros((self.T_market-self.t_ahead_0, len(participant_all.assets_nd)))
 			LMP_P_del_nd = np.zeros((self.T_market-self.t_ahead_0, len(participant_all.assets_nd)))
+			
 			#CHECK INDEXES 
+
 			for t in range(self.T_market-self.t_ahead_0):
-				for flex in range(len(participant_all.assets_flex)):
+				# G.T*dual(p_0) + K.T*(dual v min - dual v max) - J.T*dual i 
 
-					LMP_P_wye_flex[t,flex] = 1/self.dt_market*(#dual_P_wye[t,ph]\
-			                           dual_P_slack[t]\
-			                           -sum(dual_vbus_max[t,flex]*A_vlim_wye_flex_list[t][ph,flex] for ph in range(N_load_bus_phases))\
-			                           +sum(dual_vbus_min[t,flex]*A_vlim_wye_flex_list[t][ph,flex] for ph in range(N_load_bus_phases))\
-			                           -sum(sum(dual_iline_max[t,flex]*A_line_wye_flex_list[t][line][line_ph,flex] for line_ph in range(self.network.N_phases)) for line in range(self.network.N_lines)))
-					LMP_P_del_flex[t,flex] = 1/self.dt_market*(#dual_P_del[t,ph]\
-			                           dual_P_slack[t]
-			                           -sum(dual_vbus_max[t,flex]*A_vlim_del_flex_list[t][ph,flex] for ph in range(N_load_bus_phases))\
-			                           +sum(dual_vbus_min[t,flex]*A_vlim_del_flex_list[t][ph,flex] for ph in range(N_load_bus_phases))\
-			                           -sum(sum(dual_iline_max[t,flex]*A_line_del_flex_list[t][line][line_ph,flex] for line_ph in range(self.network.N_phases)) for line in range(self.network.N_lines)))
-					
-				for nd in range(len(participant_all.assets_nd)):
+				#######################################################################################################
+				A_line_wye_flex, A_line_del_flex= np.array(A_line_wye_flex_list[t][0]), np.array(A_line_del_flex_list[t][0])
+				for ij in range(1,len(A_line_wye_flex_list[0])):
+					#stack all 
+					A_line_wye_flex = np.concatenate((A_line_wye_flex, A_line_wye_flex_list[t][ij]), axis=0)
+					A_line_del_flex = np.concatenate((A_line_del_flex, A_line_del_flex_list[t][ij]), axis=0)
 
-					LMP_P_wye_nd[t,nd] = 1/self.dt_market*(#dual_P_wye[t,ph]\
-			                           dual_P_slack[t]\
-			                           -sum(dual_vbus_max[t,nd]*A_vlim_wye_nd_list[t][ph,nd] for ph in range(N_load_bus_phases))\
-			                           +sum(dual_vbus_min[t,nd]*A_vlim_wye_nd_list[t][ph,nd] for ph in range(N_load_bus_phases))\
-			                           -sum(sum(dual_iline_max[t,nd]*A_line_wye_nd_list[t][line][line_ph,nd] for line_ph in range(self.network.N_phases)) for line in range(self.network.N_lines)))
-					LMP_P_del_nd[t,nd] = 1/self.dt_market*(#dual_P_del[t,ph]\
-			                           dual_P_slack[t]
-			                           -sum(dual_vbus_max[t,nd]*A_vlim_del_nd_list[t][ph,nd] for ph in range(N_load_bus_phases))\
-			                           +sum(dual_vbus_min[t,nd]*A_vlim_del_nd_list[t][ph,nd] for ph in range(N_load_bus_phases))\
-			                           -sum(sum(dual_iline_max[t,nd]*A_line_del_nd_list[t][line][line_ph,nd] for line_ph in range(self.network.N_phases)) for line in range(self.network.N_lines)))
+				A_line_wye_nd, A_line_del_nd= np.array(A_line_wye_nd_list[t][0]), np.array(A_line_del_nd_list[t][0])
+				for ij in range(1,len(A_line_wye_nd_list[0])):
+					#stack all 
+					A_line_wye_nd = np.concatenate((A_line_wye_nd, A_line_wye_nd_list[t][ij]), axis=0)
+					A_line_del_nd = np.concatenate((A_line_del_nd, A_line_del_nd_list[t][ij]), axis=0)
+				#print('A_line_del_nd shape', A_line_del_nd.shape)
 
+			########################################################################################################
+				LMP_P_wye_flex[t,:] = 1/self.dt_market*(
+					                                    A_Pslack_wye_flex_list[t]*dual_P_slack[t]  #1e3*
+					                                  - np.dot(A_vlim_wye_flex_list[t].T,dual_vbus_max[t,:]) #1e3*
+					                                  + np.dot(A_vlim_wye_flex_list[t].T,dual_vbus_min[t,:]) #1e3*
+					                                  - np.dot(A_line_wye_flex.T,dual_iline_max[t,:])  #1e3*
+					                                  )
+				LMP_P_del_flex[t,:] = 1/self.dt_market*(
+					                                    A_Pslack_del_flex_list[t]*dual_P_slack[t]  #1e3*
+					                                  - np.dot(A_vlim_del_flex_list[t].T,dual_vbus_max[t,:]) #1e3*
+					                                  + np.dot(A_vlim_del_flex_list[t].T,dual_vbus_min[t,:]) #1e3*
+					                                  - np.dot(A_line_del_flex.T,dual_iline_max[t,:]) #1e3*
+					                                  )
 
+				LMP_P_wye_nd[t,:] = 1/self.dt_market*(
+					                                    A_Pslack_wye_nd_list[t]*dual_P_slack[t] #1e3*
+					                                  - np.dot(A_vlim_wye_nd_list[t].T,dual_vbus_max[t,:]) #1e3*
+					                                  + np.dot(A_vlim_wye_nd_list[t].T,dual_vbus_min[t,:]) #1e3*
+					                                  - np.dot(A_line_wye_nd.T,dual_iline_max[t,:]) #1e3*
+					                                  )
+				LMP_P_del_nd[t,:] = 1/self.dt_market*(
+					                                    A_Pslack_del_nd*dual_P_slack[t] #1e3*
+					                                  - np.dot(A_vlim_del_nd_list[t].T,dual_vbus_max[t,:]) #1e3*
+					                                  + np.dot(A_vlim_del_nd_list[t].T,dual_vbus_min[t,:]) #1e3*
+					                                  - np.dot(A_line_del_nd.T,dual_iline_max[t,:])  #1e3*
+					                                  )
+			
 			pickle.dump((LMP_P_wye_nd), open( "Results\\Central\\LMPwye.p", "wb" ) )
 			pickle.dump((LMP_P_del_nd), open( "Results\\Central\\LMPdel.p", "wb" ) )
 
@@ -459,7 +493,12 @@ class Central_market(Market):
 						if self.network.bus_df[self.network.bus_df['number']==bus_id]['connect'].values[0]=='Y':
 							price = LMP_P_wye_flex[:, flex]
 						else: price = LMP_P_del_flex[:, flex] 
-					asset.update_ems(x[:self.T_market-self.t_ahead_0, flex]+ x[self.T_market-self.t_ahead_0:, flex], self.t_ahead_0)
+
+					if asset.type == 'storage':
+						asset.update_ems(x[:self.T_market-self.t_ahead_0, flex]+ x[self.T_market-self.t_ahead_0:, flex], self.t_ahead_0, enforce_const=False)
+					else:
+						asset.update_ems(x[:self.T_market-self.t_ahead_0, flex]- x[self.T_market-self.t_ahead_0:, flex], self.t_ahead_0, enforce_const=False)
+
 					schedules[p_idx].append(asset.Pnet_ems[self.t_ahead_0:])
 					sch = asset.Pnet_ems[self.t_ahead_0:]
 					flex +=1
@@ -475,7 +514,6 @@ class Central_market(Market):
 						list_clearing.append([t+self.t_ahead_0, par.p_id, 0, -self.dt_market*sch[t], price[t]])
 
 				
-		#group by price? for each participant sum trades with same price?
 		market_clearing_outcome=pd.DataFrame(list_clearing, columns=['time', 'seller', 'buyer', 'energy', 'price'])
 		market_clearing_outcome = market_clearing_outcome.groupby(['time', 'seller', 'buyer', 'price'])['energy'].aggregate('sum').reset_index()
 
@@ -494,20 +532,19 @@ class ToU_market(Market):
 	def market_clearing(self):
 		"""
 		computes the energy exchange of each participant with the grid
-		Parameters
-		----------
 
 		Returns
 		-------
-		market_clearing_outcome: pandas Dataframe
+		market_clearing_outcome : pandas Dataframe
             the resulting energy exchange
             ----------------------------------------------
              id | time | seller | buyer | energy | price |
             ----------------------------------------------
 			|	|	   |		|		|		 |	     |
             ----------------------------------------------
-        schedules: list of lists
+        schedules : list of lists
 	    	assets schedules
+
 		"""
 			
 		list_clearing, schedules, outputs = [], [], []
@@ -530,13 +567,15 @@ class ToU_market(Market):
 
 class P2P_market(Market):
 	"""
-	Returns the bilateral contracts between peers follwing the algorithm proposed in 
-	Morstyn et. Al, "Bilateral Contract Networks for Peer-to-Peer Energy Trading"
+	Returns the bilateral contracts between peers following the algorithm proposed by 
+	Morstyn et. Al, in "Bilateral Contract Networks for Peer-to-Peer Energy Trading"
+	
 	Parameters
 	------------
-	fees: 3 dim np.array
+	fees : 3 dim np.array
 		the fees the peers have to pay to the DNO for using the physical infrastructure
 		fees[t,i,j]: the fees of transfering energy between participant i and participant j at time t
+	
 	"""
 
 	def __init__(self, participants, dt_market, T_market, price_imp, t_ahead_0=0, P_import=None, P_export=None, price_exp=None, network=None, fees=None):
@@ -561,9 +600,9 @@ class P2P_market(Market):
 				energy_buy = max(participant.Pnet_ems[t] + participant.Pmax[t],0) 
 				energy_sell = min(participant.Pnet_ems[t] + participant.Pmin[t],0) 
 				if energy_buy !=0:
-					list_offers.append([t, participant.p_id, energy_buy, self.price_exp[t+self.t_ahead_0, participant.p_id-1]])
+					list_offers.append([t, participant.p_id, energy_buy, 0]) #self.price_exp[t+self.t_ahead_0, participant.p_id-1]
 				elif energy_sell != 0:
-					list_offers.append([t, participant.p_id, energy_sell, self.price_exp[t+self.t_ahead_0, participant.p_id-1]]) #-energy_sell?? to check!
+					list_offers.append([t, participant.p_id, energy_sell, 0]) #-energy_sell?? to check!
 
 		self.offers = pd.DataFrame(data=list_offers, columns=['time', 'participant', 'energy', 'price'])
 
@@ -580,6 +619,7 @@ class P2P_market(Market):
 	#add here participants preferences: e.g., 
 		"""
         Returns the outcome of a P2P negotiation procedure
+
         Parameters
         ----------
         trade_energy : float
@@ -591,16 +631,15 @@ class P2P_market(Market):
         stopping_criterion: int
         	number of iterations that the negociation will make before stopping
 
-        returns
+        Returns
         --------
-        market_clearing_outcome: pandas Dataframe
+        market_clearing_outcome : pandas Dataframe
             the resulting energy exchange
             ----------------------------------------------
              id | time | seller | buyer | energy | price |
             ----------------------------------------------
 			|	|	   |		|		|		 |	     |
             ----------------------------------------------
-            (*): the slack bus (upstream market) has the index 0
         schedules: list of lists
 	    	assets schedules
         """ 
@@ -627,7 +666,6 @@ class P2P_market(Market):
 
 		trade_list_ems = np.empty((0, 9)) #X the set of potential bilateral contracts
 	
-		#Add 1 trade between each PV generator and each flex load owner per time interval
 		trade_index = 0
 		N_trades_ahead_s2b = np.zeros((self.T_market,len(self.participants),len(self.participants)), dtype=int)
 		for t in range(self.t_ahead_0,self.T_market):
@@ -651,8 +689,6 @@ class P2P_market(Market):
 
 		N_trades = trade_index
 
-		#print('trade_list_ems:', len(trade_list_ems))
-
 		par_pref_output = [None]*len(self.participants)
 		done = False
 		iterations =0
@@ -664,7 +700,6 @@ class P2P_market(Market):
 			done = True
 			for i in range(len(self.participants)):
 				print('Iter.: ' + str(iterations) + ' | Participant: ' + str(self.participants[i].p_id) )
-				#par_pref_output[i] = self._get_preferred_trades_mi(self.participants[i], trade_list_ems, curt=True)
 				par_pref_output[i] = self._get_trades(self.participants[i], trade_list_ems)
 		    	
 			q_ds_full_list = np.zeros(N_trades)
@@ -696,7 +731,6 @@ class P2P_market(Market):
 			print('Final setup  | Participant: ' + str(self.participants[i].p_id) )
 			q_ds_full_ems[:] += np.array(par_pref_output[i]['q_ds_full_list'])[:,0]
 			q_us_full_ems[:] += np.array(par_pref_output[i]['q_us_full_list'])[:,0]
-			#par_pref_output_final[i] = self._get_preferred_trades_mi(self.participants[i], trade_list_ems, q_trades_req=q_us_full_ems)
 			par_pref_output_final[i] = self._get_trades(self.participants[i], trade_list_ems, q_trades_req=q_us_full_ems)
 
 			##### prepare clearing outcome
@@ -707,6 +741,8 @@ class P2P_market(Market):
 				elif par_pref_output_final[i]['q_sup_buy'][t]:
 					list_clearing.append([self.t_ahead_0+t, 0, self.participants[i].p_id, par_pref_output_final[i]['q_sup_buy'][t], self.price_imp[t+self.t_ahead_0, self.participants[i].p_id-1]])
 
+			print('q sell:', par_pref_output_final[i]['q_sup_sell'])
+			print('q buy:', par_pref_output_final[i]['q_sup_buy'])
 			###### update resources
 			print('*********************************************\n*\n*\n*')
 			print('* Updating resources... ')
@@ -714,16 +750,18 @@ class P2P_market(Market):
 			nd, d = 0,0
 			schedule = []
 			for asset in self.participants[i].assets:
-				if asset.type != 'ND':
-					asset.update_ems(par_pref_output_final[i]['p_flex'][:self.T_market-self.t_ahead_0, d] + par_pref_output_final[i]['p_flex'][self.T_market-self.t_ahead_0:, d], self.t_ahead_0)
+				if asset.type == 'storage':
+					asset.update_ems(par_pref_output_final[i]['p_flex'][:self.T_market-self.t_ahead_0, d] + par_pref_output_final[i]['p_flex'][self.T_market-self.t_ahead_0:, d], self.t_ahead_0, enforce_const=False)
+					schedule.append(asset.Pnet_ems[self.t_ahead_0:])
+					d+=1
+				elif asset.type == 'building':
+					asset.update_ems(par_pref_output_final[i]['p_flex'][:self.T_market-self.t_ahead_0, d] - par_pref_output_final[i]['p_flex'][self.T_market-self.t_ahead_0:, d], self.t_ahead_0, enforce_const=False)
 					schedule.append(asset.Pnet_ems[self.t_ahead_0:])
 					d+=1
 				else:
-					#print('Pnet_ems shape', asset.Pnet_ems.shape)
-					#print('par_pref_curt shape', par_pref_output_final[i]['p_curt'][:, nd].shape)
 					asset.update_ems(par_pref_output_final[i]['p_curt'][:, nd], self.t_ahead_0)	
 					schedule.append(asset.Pnet_ems[self.t_ahead_0:])
-					asset.Pnet_ems[self.t_ahead_0:] = asset.Pnet_ems[self.t_ahead_0:] - par_pref_output_final[i]['p_curt'][:, nd] 
+					#asset.Pnet_ems[self.t_ahead_0:] = asset.Pnet_ems[self.t_ahead_0:] - par_pref_output_final[i]['p_curt'][:, nd] 
 					nd+=1
 			schedules.append(schedule)
 
@@ -781,10 +819,8 @@ class P2P_market(Market):
 		us_t_mat = np.zeros([T_dec,N_trades_us])
 		for t in range(T_dec):
 			us_t_mat[t,:] = (times_us == t+self.t_ahead_0)
-		#print('us_t_mat:', us_t_mat)
 		#DS trades:
 		trades_ds = trade_list[np.where((trade_list[:,trades_seller_col]== participant.p_id).astype(bool))]
-		#print('trades_ds', trades_ds)
 		N_trades_ds = len(trades_ds)
 		ids_ds = trades_ds[:,trades_id_col]
 		times_ds = trades_ds[:,trades_time_col]
@@ -796,7 +832,6 @@ class P2P_market(Market):
 		ds_t_mat = np.zeros([T_dec,N_trades_ds])
 		for t in range(T_dec):
 			ds_t_mat[t,:] = (times_ds == t+self.t_ahead_0)
-		#print('ds_t_mat:', ds_t_mat)
 		#Ensure trades us and ds are not zero            
 		if  N_trades_us == 0:
 			N_trades_us = 1
@@ -905,8 +940,7 @@ class P2P_market(Market):
 			          
 			                    )
 		
-		prob.solve(solver='gurobi') #, primals=None)
-		#prob.solve(solver='mosek')#, mosek_params={'MSK_IPAR_INFEAS_REPORT_AUTO': "MSK_ON"}, verbosity=2)#, primals=None) 
+		prob.solve(solver='mosek') #,mosek_params={'MSK_IPAR_INFEAS_REPORT_AUTO': "MSK_ON"}, verbosity=2)#, primals=None) 
 		print('P2P optimisation:', prob.status)
 		
 		q_us_full_list = np.zeros([len(trade_list),1])
@@ -1051,12 +1085,27 @@ class Capacity_limits(Market):
 		for t in range(self.T_market-self.t_ahead_0):
 			print('t=',t+self.t_ahead_0)
 			####get linear parameters:
-			A_Pslack, b_Pslack, A_vlim, b_vlim, v_abs_min_vec, v_abs_max_vec, _, _ = network.get_linear_parameters(assets_all, t)#################
+			A_Pslack, b_Pslack, A_vlim, b_vlim, v_abs_min_vec, v_abs_max_vec, _, _, _ = network.get_linear_parameters(assets_all, t+self.t_ahead_0)#################
 			A_Pslack = np.expand_dims(A_Pslack, axis=0)     
 			A = np.concatenate((A_Pslack, -A_Pslack, A_vlim*1e3, -A_vlim*1e3), axis=0) 
 			B = np.concatenate( ([[Cfirm-(b_Pslack/1e3)]], [[Cfirm + (b_Pslack/1e3)]], v_abs_max_vec-np.expand_dims(b_vlim, axis=1), np.expand_dims(b_vlim, axis=1)-v_abs_min_vec), axis=0)
 
-			sig = np.dot(np.dot(A,Sigma[t]),A.T)
+			"""
+            A_clim, b_clim, i_abs_max_vec = np.array(A_ijlim[0]), np.array(b_ijlim[0]), np.array(i_abs_max[0]) #A, b current lim
+            for ij in range(1,len(A_ijlim)):
+                #stack all 
+                A_clim = np.concatenate((A_clim, A_ijlim[ij]), axis=0)
+                b_clim = np.concatenate((b_clim, b_ijlim[ij]), axis=0)
+                i_abs_max_vec = np.concatenate((i_abs_max_vec, i_abs_max[ij]), axis=0)
+
+            A = np.concatenate((A_Pslack, -A_Pslack, A_vlim*1e3, -A_vlim*1e3, A_clim*1e3), axis=0) 
+            B= np.concatenate( ([[Cap-(b_Pslack/1e3)]], [[Cap + (b_Pslack/1e3)]], \
+                                 v_abs_max_vec-np.expand_dims(b_vlim, axis=1), np.expand_dims(b_vlim, axis=1)-v_abs_min_vec), \
+                                 i_abs_max_vec-np.expand_dims(b_clim, axis=1),
+                                 axis=0)
+
+            """
+			sig = np.dot(np.dot(A,Sigma[t+self.t_ahead_0]),A.T)
 			sigm = np.expand_dims(np.sqrt(sig.diagonal()), axis=1) 
 
 			####Run stochastic optimisation
