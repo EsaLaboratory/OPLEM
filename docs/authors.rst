@@ -1,7 +1,7 @@
 Authors
 ========
 
-OPEN was developed by the Energy and Power Group, Engineering Science, University of Oxford.
+OPLEM in an extension of OPEN, and was developed by the Energy System Architecture Lab (ESAL) Group, School of Engineering, University of Edinburgh.
 
 `Website <https://www.eng.ed.ac.uk/research/institutes/ies>`_
 
