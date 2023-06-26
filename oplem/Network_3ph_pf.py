@@ -213,7 +213,9 @@ class Network_3ph:
             nominal operating point, apparent wye power loads (kVA)
         S_del_lin0 : numpy.ndarray
             nominal operating point, apparent delta power loads (kVA)
+
         """
+
         self.v_net_lin0 = v_net_lin0
         self.S_wye_lin0 = S_wye_lin0
         self.S_del_lin0 = S_del_lin0
@@ -329,6 +331,7 @@ class Network_3ph:
             self.J_dPQdel_list.append(J_dPQdel)
             self.J_I0_list.append(J_I0)
             i_ij_lin0 = J_I0
+            
             ### Yihong Modification
             # i_ij_lin0 = np.matmul(self.J_dPQwye_list[line_ij], PQ_wye) \
             #             + np.matmul(self.J_dPQdel_list[line_ij], PQ_del) \
@@ -360,6 +363,7 @@ class Network_3ph:
                             np.real(np.matmul(i_ij_lin0_conj_diag,J_dPQdel)))
             Jabs0 = np.abs(i_ij_lin0)
             # Modification END
+            
             self.Jabs_dPQwye_list.append(Jabs_dPQwye)
             self.Jabs_dPQdel_list.append(Jabs_dPQdel)
             self.Jabs_I0_list.append(Jabs0)
@@ -452,6 +456,72 @@ class Network_3ph:
 
 
     def get_parameters(self, assets_nd, assets_flex, t_ems, t0):
+        """
+        Get linear parameters for central optimisation with network constraints
+
+        Parameters
+        ------------
+        assets_nd : list
+            list of nondispatchable assets
+        assets_flex : list
+            list of flexible assets (storage and building)
+        t_ems : int
+            current time slot of optimisation
+        t0 : int t0<=t_ems
+            starting point of the optimisation
+
+        Returns
+        ----------
+        A_Pslack_flex : 2d array
+            submatrix(G) for which the rows corespond to buses connected to flexible loads
+        A_Pslack_nd : 2d array
+            submatrix(G) for which the rows corespond to buses connected to nondispatchable loads
+        b_Pslack : float
+            g_0
+
+        A_vlim_flex : 2d array
+            submatrix(K) for which the rows corespond to buses connected to flexible loads
+        A_vlim_nd : 2d array
+            submatrix(K) for which the rows corespond to buses connected to nondispatchable loads
+        b_vlim : float
+            k_0
+        v_abs_min_vec : 1d array
+            vector of maximum voltage limit
+        v_abs_max_vec : 1d array
+            vector of minimum voltage limit
+
+        A_lines_flex : list
+            list of submatrices(J) over lines connected to flexible loads
+        A_lines_nd : list
+            list of submatrices(J) over lines connected to nondispatchable loads
+        
+        A_Pslack_wye_flex : 2d array
+            submatrix(G) for which the rows corespond to buses connected to flexible loads, type='Y'
+        A_Pslack_del_flex : 2d array
+            submatrix(G) for which the rows corespond to buses connected to flexible loads, type='Delta'
+        A_vlim_wye_flex : 2d array
+            submatrix(K) for which the rows corespond to buses connected to flexible loads, type='Y'
+        A_vlim_del_flex : 2d array
+            submatrix(K) for which the rows corespond to buses connected to flexible loads, type='Delta'
+        A_line_wye_flex : list
+            list of submatrices(J) over lines connected to flexible loads, type='Y' 
+        A_line_del_flex : list
+            list of submatrices(J) over lines connected to flexible loads, type='Delta'
+        
+        A_Pslack_wye_nd : 2d array
+            submatrix(G) for which the rows corespond to buses connected to nondispatchable loads, type='Y'
+        A_Pslack_del_nd : 2d array
+            submatrix(G) for which the rows corespond to buses connected to nondispatchable loads, type='Delta'
+        A_vlim_wye_nd : 2d array
+            submatrix(K) for which the rows corespond to buses connected to nondispatchable loads, type='Y' 
+        A_vlim_del_nd : 2d array
+            submatrix(K) for which the rows corespond to buses connected to nondispatchable loads, type='Delta'
+        A_line_wye_nd : list
+            list of submatrices(J) over lines connected to nondispatchable loads, type='Y'
+        A_line_del_nd : list
+            list of submatrices(J) over lines connected to nondispatchable loads, type='Delta'
+
+        """
 
         if len(assets_nd):
             T = assets_nd[0].T
@@ -463,22 +533,6 @@ class Network_3ph:
             dt = assets_flex[0].dt
             T_ems = assets_flex[0].T_ems
             dt_ems = assets_flex[0].dt_ems
-
-        #Assemble P_demand out of P actual and P predicted and convert to EMS time series scale
-        #P_demand = np.zeros([T_ems-t0,len(assets_nd)])
-        #Q_demand = np.zeros([T_ems-t0,len(assets_nd)])
-        #for i in range(len(assets_nd)):
-            #P_demand[:,i] , Q_demand[:,i] = assets_nd[i].mpc_demand(t0, q_val=True)
-         #   if t_ems == t0:
-          #      P_demand[t_ems-t0, i] = assets_nd[i].Pnet_ems[t_ems]
-                #np.mean(assets_nd[i].Pnet[t_ems*int(dt_ems/dt) : (t_ems+1)*int(dt_ems/dt)])
-           #     Q_demand[t_ems-t0, i] = assets_nd[i].Qnet_ems[t_ems]
-                #np.mean(assets_nd[i].Qnet[t_ems*int(dt_ems/dt) : (t_ems+1)*int(dt_ems/dt)])
-            #else:
-             #   P_demand[t_ems-t0, i] = 
-                #np.mean(assets_nd[i].Pnet_pred[t_ems*int(dt_ems/dt) : (t_ems+1)*int(dt_ems/dt)])
-              #  Q_demand[t_ems-t0, i] = 
-                #np.mean(assets_nd[i].Qnet_pred[t_ems*int(dt_ems/dt) : (t_ems+1)*int(dt_ems/dt)])
 
         #Set up Matrix linking nondispatchable assets to their bus and phase
         G_wye_nondispatch,  G_del_nondispatch = self.get_Gs(assets_nd) #nondispatch
@@ -601,7 +655,8 @@ class Network_3ph:
         # current 
         A_lines_flex, A_line_wye_flex, A_line_del_flex, A_lines_nd, A_line_wye_nd, A_line_del_nd  = [], [], [], [], [], []
         for line_ij in range(self.N_lines):
-                #if line_ij not in i_unconstrained_lines:
+            #if line_ij not in i_unconstrained_lines:
+
                 iabs_max_line_ij = network_t.i_abs_max[line_ij,:] #3 phases
                 # maximum current magnitude constraint
                 A_line_flex = np.matmul(network_t.Jabs_dPQwye_list[line_ij],\
@@ -610,6 +665,7 @@ class Network_3ph:
                                                Jabs_dPQdel_list[line_ij],\
                                                G_del_ES_PQ)
                 A_lines_flex.append(A_line_flex)
+
                 A_line_wye_flex.append(np.matmul(network_t.Jabs_dPQwye_list[line_ij],G_wye_ES_PQ))
                 A_line_del_flex.append(np.matmul(network_t.Jabs_dPQdel_list[line_ij],G_del_ES_PQ))
 
@@ -621,8 +677,6 @@ class Network_3ph:
                 A_lines_nd.append(A_line_nd)
                 A_line_wye_nd.append(np.matmul(network_t.Jabs_dPQwye_list[line_ij],G_wye_nondispatch_PQ))
                 A_line_del_nd.append(np.matmul(network_t.Jabs_dPQdel_list[line_ij],G_del_nondispatch_PQ))
-
-        
         
         A_Pslack_wye_flex = np.matmul(np.real(np.matmul(network_t.vs.T,\
                                                               np.matmul(np.conj(network_t.Ysn),\
@@ -655,13 +709,21 @@ class Network_3ph:
     def get_Gs(self, assets):
         """
         Set up matrices G_wye and G_del linking a group of assets to their bus and phase
+
+        Parameters
+        -----------
+        assets : list
+            list of assets
+
         Returns
         -----------
-        G_wye: numpy.ndarray (no unit)
+        G_wye : numpy.ndarray (no unit)
             size (3*(N_buses-1),nbr of assets)
-        G_del: numpy.ndarray (no unit)
+        G_del : numpy.ndarray (no unit)
             size (3*(N_buses-1),nbr of assets)
+
         """
+
         N_buses = self.N_buses
         N_phases = self.N_phases
         G_wye = np.zeros([3*(N_buses-1),len(assets)])
@@ -681,6 +743,38 @@ class Network_3ph:
         return G_wye, G_del
 
     def get_linear_parameters(self, assets_nd, t):
+        """
+        Get linear parameters for linear optimisation
+
+        Parameters
+        -----------
+        assets_nd : list
+            list of the non_dispatchable assets in the network
+        t : int
+            time
+
+        Returns
+        --------
+        A_Pslack_nd : 2d array
+            submatrix(G) for which the rows corespond to buses connected to nondispatchable loads
+        b_Pslack : float
+            g_0
+        A_vlim_nd : 2d array
+            submatrix(K) for which the rows corespond to buses connected to nondispatchable loads
+        b_vlim : float
+            k_0
+        v_abs_min_vec :
+        v_abs_max_vec : 1d array
+            vector of minimum voltage limit
+        A_lines : list
+            list of submatrices(J) over lines connected to nondispatchable loads
+        i_lim : float
+            j0
+        i_abs_max :  1d array
+            vector of maximum thermal limit
+        
+        """
+
         P_lin_buses = np.zeros([self.N_buses,self.N_phases])
         Q_lin_buses = np.zeros([self.N_buses,self.N_phases])    
         G_wye_nondispatch,  G_del_nondispatch = self.get_Gs(assets_nd)
@@ -770,11 +864,14 @@ class Network_3ph:
 
         A_lines = np.empty((self.N_phases, len(assets_nd)))
         i_abs_max = []
+        i_lim = []
         for line_ij in range(self.N_lines):
                 #if line_ij not in i_unconstrained_lines:
                 iabs_max_line_ij = network_t.i_abs_max[line_ij,:] #3 phases
                 #concatenate
                 i_abs_max.append(iabs_max_line_ij)
+
+                i_lim.append(network_t.Jabs_I0_list[line_ij])
 
                 # maximum current magnitude constraint
                 A_line = np.matmul(network_t.Jabs_dPQwye_list[line_ij],\
@@ -785,7 +882,7 @@ class Network_3ph:
                 #concatenate in rows   Aline (N_phases, N_loads) and we have 1Aline per ij line
                 A_lines = np.concatenate((A_lines, A_line), axis=0)                  
 
-        return A_Pslack_nd, b_Pslack, A_vlim_nd, b_vlim, v_abs_min_vec, v_abs_max_vec, A_lines, np.array(i_abs_max)
+        return A_Pslack_nd, b_Pslack, A_vlim_nd, b_vlim, v_abs_min_vec, v_abs_max_vec, A_lines, i_lim, np.array(i_abs_max)
 
     def zbus_pf(self):
         """
@@ -1319,9 +1416,8 @@ class Network_3ph:
 
         """        
         self.N_buses = 13
-        self.N_lines = 11 #10
+        self.N_lines = 11
         self.N_phases = 3
-        
         #Create buses dataframe
         bus_columns = ['name','number','load_type','connect',\
                        'Pa','Pb','Pc','Qa','Qb','Qc']
