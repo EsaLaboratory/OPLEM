@@ -23,7 +23,7 @@ setup(
         'pandas',
         'PICOS',
         'scikit-learn',
-        'scipy<=1.6.0'
+        'scipy'
 
     ],
 )
