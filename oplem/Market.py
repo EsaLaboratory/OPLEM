@@ -28,7 +28,7 @@ import numpy as np
 import pickle
 import time
 import picos as pic
-import System.Participant as Participant
+import oplem.Participant as Participant
 
 class Market:
 	def __init__(self, participants, dt_market, T_market, price_imp, t_ahead_0=0, P_import=None, P_export=None, price_exp=None, network=None):
