@@ -16,7 +16,7 @@ setup(
     packages=['oplem'], #same as name
     install_requires=[
         'cvxopt',
-        'notebook'
+        'notebook',
         'matplotlib',
         'numpy',
         'pandapower',
