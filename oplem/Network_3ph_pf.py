@@ -1601,14 +1601,14 @@ class Network_3ph:
             Bbc_i = self.line_config_df[self.line_config_df['name']
                 ==line_info_i['config']]['Bbc'].values[0]*\
                 line_info_i['B_conv_factor']*line_info_i['length']
-            self.line_df = self.line_df.append({'busA':busA_i,'busB':busB_i,
+            self.line_df = self.line_df._append({'busA':busA_i,'busB':busB_i,
                             'Zaa':Zaa_i,'Zbb':Zbb_i,'Zcc':Zcc_i,'Zab':Zab_i,
                             'Zac':Zac_i,'Zbc':Zbc_i,\
                             'Baa':Baa_i,'Bbb':Bbb_i,'Bcc':Bcc_i,'Bab':Bab_i,
                             'Bac':Bac_i,'Bbc':Bbc_i},ignore_index=True)
         #Add the switch (low impedance) between buses 671 and 692
         Zswitch = 1e-6+0j
-        self.line_df = self.line_df.append({'busA':'671','busB':'692',
+        self.line_df = self.line_df._append({'busA':'671','busB':'692',
                         'Zaa':Zswitch,'Zbb':Zswitch,'Zcc':Zswitch,'Zab':0,
                         'Zac':0,'Zbc':0,\
                         'Baa':0,'Bbb':0,'Bcc':0,'Bab':0,'Bac':0,'Bbc':0},
@@ -1619,7 +1619,7 @@ class Network_3ph:
         #impedance on the primary side:
         #Zohms_pri = (4.16e3)**2/(500e3)*(0.011+0.02j)
         
-        #self.line_df = self.line_df.append({'busA':'633','busB':'634',
+        #self.line_df = self.line_df._append({'busA':'633','busB':'634',
         #                    'Zaa':0.381+0.692j,'Zbb':0.381+0.692j,
         #                    'Zcc':0.381+0.692j,'Zab':0,'Zac':0,'Zbc':0,\
         #                    'Baa':0,'Bbb':0,'Bcc':0,'Bab':0,'Bac':0,'Bbc':0},
@@ -1629,7 +1629,7 @@ class Network_3ph:
         #Types: 'wye-g', 'wye', 'delta'
         transformer_columns =['busA','busB','typeA','typeB','Zseries','Zshunt']
         self.transformer_df = pd.DataFrame(columns = transformer_columns)
-        self.transformer_df = self.transformer_df.append({'busA':'633',
+        self.transformer_df = self.transformer_df._append({'busA':'633',
                                                           'busB':'634',
                                                           'typeA':'wye-g',
                                                           'typeB':'wye-g',
@@ -1640,7 +1640,7 @@ class Network_3ph:
         capacitor_columns = ['name','number','bus','kVln','connect',
                              'Qa','Qb','Qc']
         self.capacitor_df = pd.DataFrame(columns = capacitor_columns)
-        self.capacitor_df = self.capacitor_df.append({'name':'cap2',
+        self.capacitor_df = self.capacitor_df._append({'name':'cap2',
                                                       'number':0,
                                                       'bus':'675',
                                                       'kVln':2.4,
@@ -1649,7 +1649,7 @@ class Network_3ph:
                                                       'Qb':200,
                                                       'Qc':200},
                                                         ignore_index=True) 
-        self.capacitor_df = self.capacitor_df.append({'name':'cap2',
+        self.capacitor_df = self.capacitor_df._append({'name':'cap2',
                                                       'number':1,
                                                       'bus':'611',
                                                       'kVln':2.4,
@@ -1759,7 +1759,7 @@ class Network_3ph:
         line_columns = ['busA', 'busB', 'Zaa', 'Zbb', 'Zcc', 'Zab', 'Zac', 'Zbc', 'Baa', 'Bbb', 'Bcc', 'Bab', 'Bac',
                         'Bbc']
         self.line_df = pd.DataFrame(columns=line_columns)
-        self.line_df = self.line_df.append({'busA': 'sourcebus', 'busB': 'sourcebusz', \
+        self.line_df = self.line_df._append({'busA': 'sourcebus', 'busB': 'sourcebusz', \
                                             'Zaa': 0.5743408230315273 + 1.7234619861939902j,
                                             'Zbb': 0.5743408230315273 + 1.7234619861939902j,
                                             'Zcc': 0.5743408230315273 + 1.7234619861939902j, \
@@ -1794,7 +1794,7 @@ class Network_3ph:
                 'B_conv_factor'] * line_info_i['length']
             Bbc_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Bbc'].values[0] * line_info_i[
                 'B_conv_factor'] * line_info_i['length']
-            self.line_df = self.line_df.append(
+            self.line_df = self.line_df._append(
                 {'busA': line_info_df.iloc[i]['busA'], 'busB': line_info_df.iloc[i]['busB'], \
                  'Zaa': Zaa_i, 'Zbb': Zbb_i, 'Zcc': Zcc_i, 'Zab': Zab_i, 'Zac': Zac_i, 'Zbc': Zbc_i, \
                  'Baa': Baa_i, 'Bbb': Bbb_i, 'Bcc': Bcc_i, 'Bab': Bab_i, 'Bac': Bac_i, 'Bbc': Bbc_i}, ignore_index=True)
@@ -1807,11 +1807,11 @@ class Network_3ph:
         ##Types: 'wye-g', 'wye', 'delta'
         transformer_columns = ['busA', 'busB', 'typeA', 'typeB', 'Zseries', 'Zshunt']
         self.transformer_df = pd.DataFrame(columns=transformer_columns)
-        self.transformer_df = self.transformer_df.append(
+        self.transformer_df = self.transformer_df._append(
             {'busA': 'sourcebusz', 'busB': '1', 'typeA': 'delta', 'typeB': 'wye-g', 'Zseries': 0.00086528 + 0.0086528j,
              'Zshunt': 0j}, ignore_index=True)
         ##e.g. can test other transformer combinations:
-        ##self.transformer_df = self.transformer_df.append({'busA':'633','busB':'634','typeA':'wye','typeB':'wye','Zseries':0.381+0.692j,'Zshunt':0},ignore_index=True)
+        ##self.transformer_df = self.transformer_df._append({'busA':'633','busB':'634','typeA':'wye','typeB':'wye','Zseries':0.381+0.692j,'Zshunt':0},ignore_index=True)
 
         ### Yihong Modification
         self.capacitor_df = []
@@ -1988,7 +1988,7 @@ class Network_3ph:
                 'B_conv_factor'] * line_info_i['length']
             Bbc_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Bbc'].values[0] * line_info_i[
                 'B_conv_factor'] * line_info_i['length']
-            self.line_df = self.line_df.append(
+            self.line_df = self.line_df._append(
                 {'busA': line_info_df.iloc[i]['busA'], 'busB': line_info_df.iloc[i]['busB'], \
                  'Zaa': Zaa_i, 'Zbb': Zbb_i, 'Zcc': Zcc_i, 'Zab': Zab_i, 'Zac': Zac_i, 'Zbc': Zbc_i, \
                  'Baa': Baa_i, 'Bbb': Bbb_i, 'Bcc': Bcc_i, 'Bab': Bab_i, 'Bac': Bac_i, 'Bbc': Bbc_i}, ignore_index=True)
@@ -1998,7 +1998,7 @@ class Network_3ph:
         Zswitch = 1e-6 + 0j
         for i in range(len(switch_data_closed)):
             switch_data_closed_i = switch_data_closed.iloc[i]
-            self.line_df = self.line_df.append({'busA': str(switch_data_closed_i['Node A']), 'busB': str(switch_data_closed_i['Node B']), \
+            self.line_df = self.line_df._append({'busA': str(switch_data_closed_i['Node A']), 'busB': str(switch_data_closed_i['Node B']), \
                                                 'Zaa': Zswitch, 'Zbb': Zswitch, 'Zcc': Zswitch, 'Zab': 0, 'Zac': 0,
                                                 'Zbc': 0, \
                                                 'Baa': 0, 'Bbb': 0, 'Bcc': 0, 'Bab': 0, 'Bac': 0, 'Bbc': 0},
@@ -2007,7 +2007,7 @@ class Network_3ph:
         ##Add Transformer
         transformer_columns = ['busA', 'busB', 'typeA', 'typeB', 'Zseries', 'Zshunt']
         self.transformer_df = pd.DataFrame(columns=transformer_columns)
-        self.transformer_df = self.transformer_df.append(
+        self.transformer_df = self.transformer_df._append(
                                     {'busA': '61', 'busB': '610', 'typeA': 'delta', 'typeB': 'delta',
                                      'Zseries': 1.465 + 3.138j, 'Zshunt': 0}, ignore_index=True)
 
@@ -2016,7 +2016,7 @@ class Network_3ph:
         capacitor_columns = ['name', 'number', 'bus', 'kVln', 'connect', 'Qa', 'Qb', 'Qc']
         self.capacitor_df = pd.DataFrame(columns=capacitor_columns)
         for i in range(1, len(capacitor_data)):
-            self.capacitor_df = self.capacitor_df.append(
+            self.capacitor_df = self.capacitor_df._append(
                 {'name': 'cap2', 'number': i - 1, 'bus': str(capacitor_data['Node'][i]), 'kVln': 2.4, 'connect': 'Y',
                  'Qa': capacitor_data['Ph-A'][i], 'Qb': capacitor_data['Ph-B'][i], 'Qc': capacitor_data['Ph-C'][i]},
                 ignore_index=True)
