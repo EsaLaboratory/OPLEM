@@ -1,14 +1,12 @@
-# Open Platform for Local Energy Markets (OPEN)
+# Open Platform for Local Energy Markets (OPLEM)
 
-A private version of Open Platform for Energy Networks (OPEN).
-
-The version as it stands currently is th same as the public one available in https://github.com/EPGOxford/OPEN
+This is an extension of Open Platform for Energy Networks (OPEN) available in https://github.com/EPGOxford/OPEN
 
 Overview
 =============
 
-Oxford University's Energy and Power Group's Open Platform for Energy Networks (OPEN) provides a python toolset for modelling, simulation and optimisation of smart local energy systems.
-The framework combines distributed energy resource modelling (e.g. for PV generation sources, battery energy storage systems, electric vehicles), energy market modelling, power flow simulation and multi-period optimisation for scheduling flexible energy resources.
+Oxford University's Energy and Power Group's Open Platform for Energy Networks (OPEN) provides a Python toolset for the modelling, simulation and optimisation of smart local energy systems.
+The framework combines distributed energy resource modelling (e.g. for PV generation sources, battery energy storage systems, and electric vehicles), energy market modelling, power flow simulation and multi-period optimisation for scheduling flexible energy resources.
 
 OPEN and the methods used are presented in detail in the following publication:
 
@@ -17,42 +15,46 @@ T. Morstyn, K. Collett, A. Vijay, M. Deakin, S. Wheeler, S. M. Bhagavathy, F. Fe
 
 Installation
 -------------
+1. Create a conda virtual environment:
+'''
+conda create -name <name_env> python
+'''
+and activate it 'conda activate <name_env>'
 
-Download OPEN source code `here <https://github.com/EPGOxford/OPEN/>`_.
+3. install oplem package and its dependencies by running the following 
 
-If using conda, we suggest creating a new virtual environment from the requirements.txt file.
-First, add the following channels to your conda distribution if not already present:
+'''
+pip install git+https://github.com/EsaLaboratory/OPEN.git
+'''
 
-.. code:: bash
-
-  conda config --add channels invenia
-  conda config --add channels picos
-  conda config --add channels conda_forge
-
-To create the new virtual environment, run:
-
-.. code:: bash
-
-  conda create --name <env_name> --file requirements.txt python=3.6
 
 
 Getting started
 ----------------
 
-The simplest way to start is to duplicate one of the case study main.py files:
-- OxEMF_EV_case_study_v6.py
-- Main_building_casestudy.py
+The simplest way to start is to run the notebook ToU_simple.ipynb that demonstrate a simple case study
+More advanced case studies can be found under the root directory of the repo:
+- test_TOU_Market.py
+- test_P2P_Market.py
+- test_Central_Market.py
 
 Platform Structure
 --------------------
 
-OPEN is implemented in Python using an object orientated programming approach, with the aim of providing modularity, code reuse and extensibility.
-Fig. 1 shows a universal modelling language (UML) class diagram of OPEN. OPEN has four important base classes: Asset, Network, Market and EnergySystem.
+OPLEM is implemented in Python using an object orientated programming approach, with the aim of providing modularity, code reuse and extensibility.
+Fig. 1 shows a universal modelling language (UML) class diagram of OPLEM with the added features highlighted in different colours. OPLEM has four important base classes: Asset, Network, Market and Participant.
 
-.. image:: _imgs/OPEN_UML_5_flat.svg
+*Note: the class EnergySystem was removed and its main methods were moved now to the Market class
+- Simulation methods can be found under Market.simulate_network_xx
+- Central optimisation methods can be found in the ihhereted subclass Central_Market.market_clearing(). The copper plate option can be passed through nw_cont=False to the market_clearing() method and the one with linear multi-phase distribution network model through nw_const=True (set by default)
+- Open loop and model predictive control simulations can be reproduced as demonstrated in the script 
+-
+*
+
+.. image:: _imgs/OPLEM_class.svg
   :width: 800 px
   :scale: 100
-  :alt: UML class diagram of OPEN, showing the main classes, attributes and methods.
+  :alt: UML class diagram of OPLEM showing the main classes, attributes and methods.
 
 **Fig. 1 - UML class diagram of OPEN, showing the main classes, attributes and methods.**
 
