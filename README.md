@@ -54,6 +54,7 @@ For academic and professional use, please provide attribution to the papers desc
 Contributors
 ------------
 - Chaimaa ESSAYEH
+- Yihong ZHOU
 - Thomas MORSTYN
 
 
