@@ -105,8 +105,7 @@ The three main attributes that were amended to the tool are:
 
 * Participants: Each market has a list of participants that are involved in the trading.
 
-* t_ahead_0: This attribute allows for a time-receding horizon simulation. If it is equal to 0, then the market will run for a day-ahead horizon. Otherwise, the market
-clearing will run from the time step t_ahead_0 to the end of the horizon.
+* t_ahead_0: This attribute allows for a time-receding horizon simulation. If it is equal to 0, then the market will run for a day-ahead horizon. Otherwise, the market clearing will run from the time step ``t_ahead_0`` to the end of the horizon.
 
 * network: the network is an optional attribute to specify, and it is useful in particular cases, such as in a central market that accounts for network constraints, or to return the results of the power flow simulations after the market is cleared.
 
