@@ -42,7 +42,6 @@ def timescale(series, t_in, t_out):
 class Asset:
     """
     An energy resource located at a particular bus in the network
-
     Parameters
     ----------
     bus_id : float
@@ -55,11 +54,9 @@ class Asset:
         [0, 1, 2] indicates 3 phase connection \
         Wye: [0, 1] indicates an a,b connection \
         Delta: [0] indicates a-b, [1] b-c, [2] c-a
-
     Returns
     -------
     Asset
-
     """
     
     def __init__(self, bus_id, dt, T, dt_ems, T_ems, phases=[0, 1, 2]):
