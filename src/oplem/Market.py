@@ -550,7 +550,7 @@ class ToU_market(Market):
 		list_clearing, schedules, outputs = [], [], []
 		for par in self.participants:
 			print('Run EMS for Participant: ' + str(par.p_id) )
-			schedule, pimp, pexp, buses = par.EMS(self.price_imp, self.P_import, self.P_export, self.price_exp, t_ahead_0=self.t_ahead_0, network=self.network)
+			schedule, pimp, pexp, buses = par.EMS(self.price_imp, self.P_import, self.P_export, self.price_exp, t_ahead_0=self.t_ahead_0)#, network=self.network)
 			schedules.append(schedule)
 
 			print('* Adding  participant {} trades to clearing outcome...'.format(par.p_id))
