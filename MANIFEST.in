@@ -1,1 +1,1 @@
-recursive-include oplem/Data *
+recursive-include oplem/*
