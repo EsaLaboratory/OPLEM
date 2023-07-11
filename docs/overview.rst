@@ -10,16 +10,14 @@ Installation
 -------------
 
 1. Create a conda virtual environment:
-```
-conda create --name <name_env> python
-```
+
+  conda create --name <name_env> python
+
 and activate it: `conda activate <name_env>`
 
 3. install oplem package and its dependencies by running the following 
 
-```
-pip install git+https://github.com/EsaLaboratory/OPEN.git
-```
+  pip install git+https://github.com/EsaLaboratory/OPEN.git
 
 Getting started
 ----------------
