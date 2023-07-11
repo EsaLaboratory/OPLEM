@@ -1,6 +1,6 @@
 # Open Platform for Local Energy Markets (OPLEM)
 
-This is an extension of Open Platform for Energy Networks (OPEN) available in https://github.com/EPGOxford/OPEN
+This is an extension of Open Platform for Energy Networks (OPEN) available in [OPEN](https://github.com/EPGOxford/OPEN)
 
 Overview
 =============
