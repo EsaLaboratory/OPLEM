@@ -15,6 +15,8 @@ T. Morstyn, K. Collett, A. Vijay, M. Deakin, S. Wheeler, S. M. Bhagavathy, F. Fe
 Energy System Architecture Lab ESAL's OPLEM is an extension of OPEN for modelling and testing LEM designs.  It offers a modular and flexible framework to create and test market designs adapted for distribution networks. 
 OPLEM comes with the same features as OPEN, which all combined cannot be found in existing tools, such as the multi-phase distribution network power flow, non-linear energy storage modelling, receding horizon and multi-period optimisation, separate models for control and simulation and the additional key feature of a generic market modelling that incorporates the common LEM designs and allows the user to develop their customised LEM designs. 
 
+The key features of OPLEM are presented in:
+
 
 Installation
 -------------
@@ -22,7 +24,7 @@ Installation
 ```
 conda create -name <name_env> python
 ```
-and activate it `conda activate <name_env>`
+and activate it: `conda activate <name_env>`
 
 3. install oplem package and its dependencies by running the following 
 
@@ -33,7 +35,8 @@ pip install git+https://github.com/EsaLaboratory/OPEN.git
 Getting started
 ----------------
 
-The simplest way to start is to run the notebook ToU_simple.ipynb that demonstrate a simple case study
+The simplest way to start is to run the notebook `ToU_simple.ipynb` that demonstrate a simple case study.
+
 More advanced case studies can be found under the root directory of the repo:
 - test_TOU_Market.py
 - test_P2P_Market.py
