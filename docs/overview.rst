@@ -9,17 +9,6 @@ The key features of OPLEM are presented in:
 Installation
 -------------
 
-#. Create a conda virtual environment:
-  .. code-block:: bash
-  conda create --name <name_env> python
-
-#. and activate it: 
-  .. code-block:: bash
-  conda activate <name_env>
-
-#. install oplem package and its dependencies by running the following 
-.. code-block:: bash
-  pip install git+https://github.com/EsaLaboratory/OPEN.git
 
 Getting started
 ----------------
