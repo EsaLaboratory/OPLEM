@@ -15,7 +15,7 @@ setup(
     license='MIT',
     packages=['oplem'], #same as name
     include_package_data=True,
-    package_dir={"": "oplem"},
+    package_dir={"": "src"},
     install_requires=[
         'cvxopt',
         'notebook',
