@@ -19,6 +19,7 @@ Getting started
 The simplest way to start is to run the notebook ``ToU_simple.ipynb`` that demonstrates a simple case study.
 
 More advanced case studies can be found under the root directory of the repo:
+
 - test_TOU_Market.py
 
 - test_P2P_Market.py
@@ -32,9 +33,12 @@ OPLEM is implemented in Python using an object orientated programming approach, 
 Fig. 1 shows a universal modelling language (UML) class diagram of OPLEM with the added features highlighted in different colours. OPLEM has four important base classes: Asset, Network, Market and Participant.
 
 *Note: the class EnergySystem was removed and its main methods were moved now to the Market class
-  * Simulation methods can be found under Market.simulate_network_xx
-  * Central optimisation methods can be found in the ihhereted subclass Central_Market.market_clearing(). The copper plate option can be passed through nw_cont=False to the market_clearing() method and the one with linear multi-phase distribution network model through nw_const=True (set by default)
-  * Open loop and model predictive control simulations can be reproduced as demonstrated in the script 
+
+* Simulation methods can be found under Market.simulate_network_xx
+
+* Central optimisation methods can be found in the ihhereted subclass Central_Market.market_clearing(). The copper plate option can be passed through nw_cont=False to the market_clearing() method and the one with linear multi-phase distribution network model through nw_const=True (set by default)
+
+* Open loop and model predictive control simulations can be reproduced as demonstrated in the script 
 
 .. image:: _imgs/OPLEM_class.svg
   :width: 800 px
@@ -75,8 +79,11 @@ An Asset object defines DERs and loads.
 Attributes include network location, phase connection and real and reactive output power profiles over the simulation time series.
 
 OPLEM includes the following Asset subclasses: 
+
 #. NondispatchableAsset for uncontrollable loads and generation sources with the option of curtailment, 
+
 #. StorageAsset for storage systems, and
+
 #. BuildingAsset for buildings with flexible heating ventilation and air conditioning (HVAC).
 
 Flexible Asset classes (StorageAsset and BuildingAsset) have an update control method, which is called by market clearing methods with control references to update the output power profiles and state variables (State of Charge for StorageAsset and Indoor temperature for BuildingAsset). The update control method also implements
@@ -95,18 +102,27 @@ Markets
 This module has been extended in the current version and was conceived to be general and adaptable to different types of markets. 
 Some attributes were kept from the previous version of the tool and these include prices of imports and exports over the optimisation horizon and import/export power limits.
 The three main attributes that were amended to the tool are:
+
 * Participants: Each market has a list of participants that are involved in the trading.
+
 * t_ahead_0: This attribute allows for a time-receding horizon simulation. If it is equal to 0, then the market will run for a day-ahead horizon. Otherwise, the market
 clearing will run from the time step t_ahead_0 to the end of the horizon.
+
 * network: the network is an optional attribute to specify, and it is useful in particular cases, such as in a central market that accounts for network constraints, or to return the results of the power flow simulations after the market is cleared.
 
 OPLEM includes the following Market subclasses:
-#. Central_Market: The central market runs a central market clearing in which all the resources’ schedules within the network are centrally optimised to minimise the cost of energy. This type of market can account for network constraints but it assumes complete knowledge of assets information
-#. TOU_Market: is the opposite of the central market in the sense that every participant manages its resources in response to a time-of-use tariff with no knowledge of other participants’ information and no consideration of the network constraints. The ToU market calls for the ``EMS()`` method in the ``Participant`` class
+
+#. Central_Market: The central market runs a central market clearing in which all the resources’ schedules within the network are centrally optimised to minimise the cost of energy. This type of market can account for network constraints but it assumes complete knowledge of assets information.
+
+#. TOU_Market: is the opposite of the central market in the sense that every participant manages its resources in response to a time-of-use tariff with no knowledge of other participants’ information and no consideration of the network constraints. The ToU market calls for the ``EMS()`` method in the ``Participant`` class.
+
 #. P2P_Market: runs a bilateral peer-to-peer energy trading as was proposed in [2]_. This P2P strategy is a price-adjusting mechanism that returns a stable set of
 bilateral contracts between peers and considers the peers’ preferences that maximise their utility.
+
 #. Auction_Market: matches the buyers and sellers based on the list of offers. Two types of priorities are considered.
+
   * price-based priority: the buyer with the highest bid price is matched to the seller with the lowest offer price,
+
   * demand-based priority: the buyer with the highest bid demand is matched to the seller with the highest offer surplus.
 
 License
