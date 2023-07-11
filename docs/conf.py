@@ -110,7 +110,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'OPENdoc'
+htmlhelp_basename = 'OPLEMdoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -137,8 +137,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'OPEN.tex', u'OPEN Documentation',
-     u'Energy and Power Group, University of Oxford', 'manual'),
+    (master_doc, 'OPLEM.tex', u'OPLEM Documentation',
+     u'ESAL, University of Edinburgh', 'manual'),
 ]
 
 
@@ -147,7 +147,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'open', u'OPEN Documentation',
+    (master_doc, 'oplem', u'OPLEM Documentation',
      [author], 1)
 ]
 
@@ -158,8 +158,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'OPEN', u'OPEN Documentation',
-     author, 'OPEN', 'One line description of project.',
+    (master_doc, 'OPLEM', u'OPLEM Documentation',
+     author, 'OPLEM', 'One line description of project.',
      'Miscellaneous'),
 ]
 
