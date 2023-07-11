@@ -10,17 +10,20 @@ Installation
 -------------
 
 #. Create a conda virtual environment:
+  .. code-block:: bash
   conda create --name <name_env> python
 
 #. and activate it: 
+  .. code-block:: bash
   conda activate <name_env>
 
 #. install oplem package and its dependencies by running the following 
-
+.. code-block:: bash
   pip install git+https://github.com/EsaLaboratory/OPEN.git
 
 Getting started
 ----------------
+
 The simplest way to start is to run the notebook `ToU_simple.ipynb` that demonstrates a simple case study.
 
 More advanced case studies can be found under the root directory of the repo:
@@ -57,6 +60,7 @@ Fig. 2 shows a high-level program flow diagram for an example of market MPC appl
 
 Networks
 .........
+
 OPLEM offers two options for network modelling. 
 #. For balanced power flow analysis: the PandapowerNet class from the open-source Python package pandapower can be used. 
 #. For unbalanced multi-phase power flow analysis: OPLEM offers the `Network_3ph` class.
@@ -70,6 +74,7 @@ Transformers with any combination of wye, wye-grounded or delta primary and seco
 
 Assets
 ......
+
 An Asset object defines DERs and loads.
 Attributes include network location, phase connection and real and reactive output power profiles over the simulation time series.
 
@@ -85,10 +90,12 @@ New Asset subclasses can be defined which inherit the attributes from other Asse
 
 Participant
 ...........
+
 The participant is the core element of the market concept. Contrary to the conventional energy markets with three main roles: generators, retailers (or energy suppliers) and end-consumers, different types of participants will be involved in future energy markets. This includes the active participation of the end-consumers and the emergence of new commercial roles such as aggregators. The `Participant` class was conceived to be inclusive and capture all the different roles. attributes include the participant id and the list of its connected assets.
 
 Markets
 .......
+
 A Market class defines 
 This module has been extended in the current version and was conceived to be general and adaptable to different types of markets. 
 Some attributes were kept from the previous version of the tool and these include prices of imports and exports over the optimisation horizon and import/export power limits.
