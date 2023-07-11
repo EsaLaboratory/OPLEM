@@ -20,7 +20,7 @@ The key features of OPLEM are presented in:
 
 Documentation
 -------------
-OPLEM documentation can be found [here] (https://open-new.readthedocs.io/en/latest/)
+OPLEM documentation can be found [here](https://open-new.readthedocs.io/en/latest/)
 
 
 Installation
