@@ -16,7 +16,7 @@ Installation
 Getting started
 ----------------
 
-The simplest way to start is to run the notebook `ToU_simple.ipynb` that demonstrates a simple case study.
+The simplest way to start is to run the notebook ``ToU_simple.ipynb`` that demonstrates a simple case study.
 
 More advanced case studies can be found under the root directory of the repo:
 * test_TOU_Market.py
