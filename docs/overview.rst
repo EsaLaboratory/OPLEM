@@ -54,12 +54,13 @@ Networks
 .........
 
 OPLEM offers two options for network modelling. 
-#. For balanced power flow analysis: the PandapowerNet class from the open-source Python package pandapower can be used. 
+#. For balanced power flow analysis: the PandapowerNet class from the open-source Python package pandapower can be used.
+
 #. For unbalanced multi-phase power flow analysis: OPLEM offers the `Network_3ph` class.
 
 The PandapowerNet class offers methods for balanced nonlinear power flow using a Netwon-Raphson solution method, and balanced linear power flow based on the DC approximation.
 
-OPLEM’s `Network_3ph` class offers nonlinear multi-phase power flow using the Z-Bus method, as well as linear multi-phase power flow using fixed-point linearisation. 
+OPLEM’s ``Network_3ph`` class offers nonlinear multi-phase power flow using the Z-Bus method, as well as linear multi-phase power flow using fixed-point linearisation. 
 Wye and delta-connected constant power loads/sources, constant impedance loads and capacitor banks can be modelled.
 Lines are modelled as :math:`\pi` -equivalent circuits.
 Transformers with any combination of wye, wye-grounded or delta primary and secondary connections can also be modelled. Features that are planned to be added in future include voltage regulators and constant current loads.
@@ -75,20 +76,19 @@ OPLEM includes the following Asset subclasses:
 #. StorageAsset for storage systems, and
 #. BuildingAsset for buildings with flexible heating ventilation and air conditioning (HVAC).
 
-Flexible Asset classes (StorageAsset and BuildingAsset) have an update control method, which is called by Market clearing methods with control references to update the output power profiles and state variables (State of Charge for StorageAsset and Indoor temperature for BuildingAsset). The update control method also implements
-constraints (with option 'enforce_const' set to True) which limit the implementation of references.
+Flexible Asset classes (StorageAsset and BuildingAsset) have an update control method, which is called by market clearing methods with control references to update the output power profiles and state variables (State of Charge for StorageAsset and Indoor temperature for BuildingAsset). The update control method also implements
+constraints (with option ``enforce_const`` set to True) which limit the implementation of references.
 
 New Asset subclasses can be defined which inherit the attributes from other Asset classes but may have additional attributes and different update control method implementations.
 
 Participant
 ...........
 
-The participant is the core element of the market concept. Contrary to the conventional energy markets with three main roles: generators, retailers (or energy suppliers) and end-consumers, different types of participants will be involved in future energy markets. This includes the active participation of the end-consumers and the emergence of new commercial roles such as aggregators. The `Participant` class was conceived to be inclusive and capture all the different roles. attributes include the participant id and the list of its connected assets.
+The participant is the core element of the market concept. Contrary to the conventional energy markets with three main roles: generators, retailers (or energy suppliers) and end-consumers, different types of participants will be involved in future energy markets. This includes the active participation of the end-consumers and the emergence of new commercial roles such as aggregators. The ``Participant`` class was conceived to be inclusive and capture all the different roles. attributes include the participant id and the list of its connected assets.
 
 Markets
 .......
 
-A Market class defines 
 This module has been extended in the current version and was conceived to be general and adaptable to different types of markets. 
 Some attributes were kept from the previous version of the tool and these include prices of imports and exports over the optimisation horizon and import/export power limits.
 The three main attributes that were amended to the tool are:
@@ -99,7 +99,7 @@ clearing will run from the time step t_ahead_0 to the end of the horizon.
 
 OPLEM includes the following Market subclasses:
 #. Central_Market: The central market runs a central market clearing in which all the resources’ schedules within the network are centrally optimised to minimise the cost of energy. This type of market can account for network constraints but it assumes complete knowledge of assets information
-#. TOU_Market: is the opposite of the central market in the sense that every participant manages its resources in response to a time-of-use tariff with no knowledge of other participants’ information and no consideration of the network constraints. The ToU market calls for the `EMS()` method in the `Participant` class
+#. TOU_Market: is the opposite of the central market in the sense that every participant manages its resources in response to a time-of-use tariff with no knowledge of other participants’ information and no consideration of the network constraints. The ToU market calls for the ``EMS()`` method in the ``Participant`` class
 #. P2P_Market: runs a bilateral peer-to-peer energy trading as was proposed in [2]_. This P2P strategy is a price-adjusting mechanism that returns a stable set of
 bilateral contracts between peers and considers the peers’ preferences that maximise their utility.
 #. Auction_Market: matches the buyers and sellers based on the list of offers. Two types of priorities are considered.
