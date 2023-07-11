@@ -12,22 +12,23 @@ OPEN and the methods used are presented in detail in the following publication:
 
 T. Morstyn, K. Collett, A. Vijay, M. Deakin, S. Wheeler, S. M. Bhagavathy, F. Fele and M. D. McCulloch; *"An Open-Source Platform for Developing Smart Local Energy System Applications”*; University of Oxford Working Paper, 2019
 
+Energy System Architecture Lab ESAL's OPLEM is an extension of OPEN for modelling and testing LEM designs.  It offers a modular and flexible framework to create and test market designs adapted for distribution networks. 
+OPLEM comes with the same features as OPEN, which all combined cannot be found in existing tools, such as the multi-phase distribution network power flow, non-linear energy storage modelling, receding horizon and multi-period optimisation, separate models for control and simulation and the additional key feature of a generic market modelling that incorporates the common LEM designs and allows the user to develop their customised LEM designs. 
+
 
 Installation
 -------------
 1. Create a conda virtual environment:
-'''
+```
 conda create -name <name_env> python
-'''
-and activate it 'conda activate <name_env>'
+```
+and activate it `conda activate <name_env>`
 
 3. install oplem package and its dependencies by running the following 
 
-'''
+```
 pip install git+https://github.com/EsaLaboratory/OPEN.git
-'''
-
-
+```
 
 Getting started
 ----------------
