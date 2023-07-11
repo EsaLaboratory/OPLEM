@@ -1,18 +1,19 @@
 OPLEM Examples
 ===============
 
-For further details on the example case studies, please refer here. [1]_
-Three case studies are presented to showcase the three markets
-All markets consider a reduced european low voltage (EULV) network with 55 load buses, of which 33 have connected PV panels, 16 battery storage systems and 16 heat pumps.
+For further details on the example case studies, please refer here [1]_
+
+Three case studies are presented to showcase the three markets.
+All markets consider the reduced European low voltage (EULV) network with 55 load buses, of which 33 buses have connected PV panels, 16 buses with battery storage systems and 16 buses with heat pumps.
 
 Time of Use (ToU) Market
----------------------------------------
+-------------------------
 ToU market considers a decentralised approach for energy trading. Every customer/participant optimises its resources in response to a market price signal.
-The price signal is generally split into two: import prices and export prices, with the export prices lower than the import prices to encentivise self-consumption. the import prices are split into two or three periods on/off/(mid) peak with each period having different prices
+The price signal is generally split into two: import prices and export prices, with the export prices lower than the import prices to encentivise self-consumption. the import prices are split into two or three periods on/off/(mid) peak with each period having different prices.
 
 
 Central Market
----------------------------------------------------
+---------------
 Central market runs centrally and optimise all the resources dwonstream the network. The prices cutomers/participants have to pay are determined by the distributed locational marginal prices (DLMP).
 
 
