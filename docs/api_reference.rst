@@ -4,25 +4,25 @@ OPEN API Reference
 Assets
 -------
 
-.. automodule:: oplem.Assets
+.. automodule:: src.oplem.Assets
   :members:
 
 Networks
 ---------
 
-.. automodule:: oplem.Network_3ph_pf
+.. automodule:: src.oplem.Network_3ph_pf
   :members:
 
 Markets
 ---------
 
-.. automodule:: oplem.Market
+.. automodule:: src.oplem.Market
   :members:
   
 Participant
 ---------
 
-.. automodule:: oplem.Participant
+.. automodule:: src.oplem.Participant
   :members:
 
 
