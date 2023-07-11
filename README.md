@@ -1,22 +1,11 @@
 # Open Platform for Local Energy Markets (OPLEM)
 
-This is an extension of Open Platform for Energy Networks (OPEN) available in [OPEN](https://github.com/EPGOxford/OPEN)
-
 Overview
 =============
-
-Oxford University's Energy and Power Group's Open Platform for Energy Networks (OPEN) provides a Python toolset for the modelling, simulation and optimisation of smart local energy systems.
-The framework combines distributed energy resource modelling (e.g. for PV generation sources, battery energy storage systems, and electric vehicles), energy market modelling, power flow simulation and multi-period optimisation for scheduling flexible energy resources.
-
-Energy System Architecture Lab ESAL's OPLEM is an extension of OPEN for modelling and testing LEM designs.  It offers a modular and flexible framework to create and test market designs adapted for distribution networks. 
-OPLEM comes with the same features as OPEN, which all combined cannot be found in existing tools, such as the multi-phase distribution network power flow, non-linear energy storage modelling, receding horizon and multi-period optimisation, separate models for control and simulation and the additional key feature of a generic market modelling that incorporates the common LEM designs and allows the user to develop their customised LEM designs. 
-
-OPEN and the methods used are presented in detail in the following publication:
-
-T. Morstyn, K. Collett, A. Vijay, M. Deakin, S. Wheeler, S. M. Bhagavathy, F. Fele and M. D. McCulloch; *"An Open-Source Platform for Developing Smart Local Energy System Applications”*; University of Oxford Working Paper, 2019
+Energy System Architecture Lab ESAL's OPLEM is a tool for modelling and testing LEM designs. The platform combines distributed energy resource modelling (e.g. for PV generation sources, battery energy storage systems, electric vehicles), power flow simulation, multi-period optimisation for scheduling flexible energy resources, and offers a modular and flexible framework to create and test market designs adapted for distribution networks. OPLEM comes with the same features as [OPEN](https://github.com/EPGOxford/OPEN), which all combined cannot be found in existing tools, such as the multi-phase distribution network power flow, non-linear energy storage modelling, receding horizon and multi-period optimisation, separate models for control and simulation and the additional key feature of a generic market modelling that incorporates the common LEM designs and allows the user to develop their customised LEM designs.
 
 The key features of OPLEM are presented in:
-> insert paper info
+> insert paper info here when ready
 
 Documentation
 -------------
