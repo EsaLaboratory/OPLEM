@@ -65,10 +65,7 @@ OPLEM offers two options for network modelling.
 
 #. For balanced power flow analysis: the ``PandapowerNet`` class from the open-source Python package pandapower can be used. It offers methods for balanced nonlinear power flow using a Netwon-Raphson solution method, and balanced linear power flow based on the DC approximation.
 
-#. For unbalanced multi-phase power flow analysis: OPLEM has the ``Network_3ph`` class. It offers nonlinear multi-phase power flow using the Z-Bus method, as well as linear multi-phase power flow using fixed-point linearisation. 
-Wye and delta-connected constant power loads/sources, constant impedance loads and capacitor banks can be modelled.
-Lines are modelled as :math:`\pi` -equivalent circuits.
-Transformers with any combination of wye, wye-grounded or delta primary and secondary connections can also be modelled. Features that are planned to be added in future include voltage regulators and constant current loads.
+#. For unbalanced multi-phase power flow analysis: OPLEM has the ``Network_3ph`` class. It offers nonlinear multi-phase power flow using the Z-Bus method, as well as linear multi-phase power flow using fixed-point linearisation. Wye and delta-connected constant power loads/sources, constant impedance loads and capacitor banks can be modelled. Lines are modelled as :math:`\pi` -equivalent circuits. Transformers with any combination of wye, wye-grounded or delta primary and secondary connections can also be modelled. Features that are planned to be added in future include voltage regulators and constant current loads.
  
 Assets
 ......
@@ -112,8 +109,7 @@ OPLEM includes the following Market subclasses:
 
 #. TOU_Market: is the opposite of the central market in the sense that every participant manages its resources in response to a time-of-use tariff with no knowledge of other participants’ information and no consideration of the network constraints. The ToU market calls for the ``EMS()`` method in the ``Participant`` class.
 
-#. P2P_Market: runs a bilateral peer-to-peer energy trading as was proposed in [2]_. This P2P strategy is a price-adjusting mechanism that returns a stable set of
-bilateral contracts between peers and considers the peers’ preferences that maximise their utility.
+#. P2P_Market: runs a bilateral peer-to-peer energy trading as was proposed in [2]_. This P2P strategy is a price-adjusting mechanism that returns a stable set of bilateral contracts between peers and considers the peers’ preferences that maximise their utility.
 
 #. Auction_Market: matches the buyers and sellers based on the list of offers. Two types of priorities are considered.
 
