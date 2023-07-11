@@ -32,13 +32,13 @@ Platform Structure
 OPLEM is implemented in Python using an object orientated programming approach, with the aim of providing modularity, code reuse and extensibility.
 Fig. 1 shows a universal modelling language (UML) class diagram of OPLEM with the added features highlighted in different colours. OPLEM has four important base classes: Asset, Network, Market and Participant.
 
-*Note: the class EnergySystem was removed and its main methods were moved now to the Market class
+*Note: the ``EnergySystem`` class was removed and its main methods were moved now to the ``Market`` class
 
-* Simulation methods can be found under Market.simulate_network_xx
+* Simulation methods can be found under ``Market.simulate_network_xx()``
 
-* Central optimisation methods can be found in the ihhereted subclass Central_Market.market_clearing(). The copper plate option can be passed through nw_cont=False to the market_clearing() method and the one with linear multi-phase distribution network model through nw_const=True (set by default)
+* Central optimisation methods can be found in the inhereted subclass ``Central_Market.market_clearing()``. The copper plate option can be passed through ``nw_cont=False`` to the ``market_clearing()`` method and the one with linear multi-phase distribution network model through ``nw_const=True`` (set by default)
 
-* Open loop and model predictive control simulations can be reproduced as demonstrated in the script 
+* Open loop and model predictive control simulations can be reproduced as demonstrated in the script.
 
 .. image:: _imgs/OPLEM_class.svg
   :width: 800 px
@@ -61,17 +61,13 @@ Networks
 
 OPLEM offers two options for network modelling. 
 
-#. For balanced power flow analysis: the PandapowerNet class from the open-source Python package pandapower can be used.
+#. For balanced power flow analysis: the ``PandapowerNet`` class from the open-source Python package pandapower can be used. It offers methods for balanced nonlinear power flow using a Netwon-Raphson solution method, and balanced linear power flow based on the DC approximation.
 
-#. For unbalanced multi-phase power flow analysis: OPLEM offers the `Network_3ph` class.
-
-The PandapowerNet class offers methods for balanced nonlinear power flow using a Netwon-Raphson solution method, and balanced linear power flow based on the DC approximation.
-
-OPLEM’s ``Network_3ph`` class offers nonlinear multi-phase power flow using the Z-Bus method, as well as linear multi-phase power flow using fixed-point linearisation. 
+#. For unbalanced multi-phase power flow analysis: OPLEM has the ``Network_3ph`` class. It offers nonlinear multi-phase power flow using the Z-Bus method, as well as linear multi-phase power flow using fixed-point linearisation. 
 Wye and delta-connected constant power loads/sources, constant impedance loads and capacitor banks can be modelled.
 Lines are modelled as :math:`\pi` -equivalent circuits.
 Transformers with any combination of wye, wye-grounded or delta primary and secondary connections can also be modelled. Features that are planned to be added in future include voltage regulators and constant current loads.
-
+ 
 Assets
 ......
 
@@ -80,14 +76,13 @@ Attributes include network location, phase connection and real and reactive outp
 
 OPLEM includes the following Asset subclasses: 
 
-#. NondispatchableAsset for uncontrollable loads and generation sources with the option of curtailment, 
+#. ``NondispatchableAsset`` for uncontrollable loads and generation sources with the option of curtailment, 
 
-#. StorageAsset for storage systems, and
+#. ``StorageAsset`` for storage systems, and
 
-#. BuildingAsset for buildings with flexible heating ventilation and air conditioning (HVAC).
+#. ``BuildingAsset`` for buildings with flexible heating ventilation and air conditioning (HVAC).
 
-Flexible Asset classes (StorageAsset and BuildingAsset) have an update control method, which is called by market clearing methods with control references to update the output power profiles and state variables (State of Charge for StorageAsset and Indoor temperature for BuildingAsset). The update control method also implements
-constraints (with option ``enforce_const`` set to True) which limit the implementation of references.
+Flexible Asset classes (``StorageAsset`` and ``BuildingAsset``) have an update control method, which is called by market clearing methods with control references to update the output power profiles and state variables (State of Charge for ``StorageAsset`` and Indoor temperature for ``BuildingAsset``). The update control method also implements constraints (with option ``enforce_const`` set to True) which limit the implementation of references.
 
 New Asset subclasses can be defined which inherit the attributes from other Asset classes but may have additional attributes and different update control method implementations.
 
