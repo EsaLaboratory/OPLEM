@@ -1660,9 +1660,9 @@ class Network_3ph:
                                                         ignore_index=True)
 
     def setup_network_eulv_reduced(self, updateYZ=True):
-        path = os.path.dirname(os.path.abspath(__file__))
-        path = os.path.dirname(os.path.dirname(__file__))
-        file_location = os.path.join(path, 'Data', 'Networks', 'eulv_reduced/')
+        #path = os.path.dirname(os.path.abspath(__file__))
+        #path = os.path.dirname(os.path.dirname(__file__))
+        file_location = os.path.join(path, 'Data', 'networks', 'eulv_reduced/')
         buses_csv = pd.read_csv(file_location + 'eulv_bus_df.csv')
         lines_csv = pd.read_csv(file_location + 'Lines2.txt', sep=' ',
                                 names=["new", "name", "busA", "busB", "phases", "linecode", "length", "units"])
@@ -1823,9 +1823,9 @@ class Network_3ph:
 
     def setup_network_ieee123(self, updateYZ=True):
 
-        path = os.path.dirname(os.path.abspath(__file__))
-        path = os.path.dirname(os.path.dirname(__file__))
-        file_location = os.path.join(path, 'Data', 'Networks', 'feeder123/')
+        #path = os.path.dirname(os.path.abspath(__file__))
+        #path = os.path.dirname(os.path.dirname(__file__))
+        file_location = os.path.join(path, 'Data', 'networks', 'feeder123/')
 
         bus_load_data = pd.read_excel(file_location + 'spot loads data.xls', header=[2, 3])
         bus_load_data = bus_load_data[:-1]
@@ -2032,9 +2032,9 @@ class Network_3ph:
         print('Loading network ',ntwkName,'\n')
         #sys.path.insert(0, os.path.join(path,'System'))
         #os.path.dirname(os.path.dirname(path))
-        path = os.path.dirname(os.path.abspath(__file__))
-        path = os.path.dirname(os.path.dirname(__file__))
-        self.feederLoc = os.path.join(path,'Data','Networks',
+        #path = os.path.dirname(os.path.abspath(__file__))
+        #path = os.path.dirname(os.path.dirname(__file__))
+        self.feederLoc = os.path.join(path,'Data','networks',
                                       ntwkName+'_dss',ntwkName)
         
         # LOAD dataframes and correct formatting V V V V
