@@ -19,9 +19,11 @@ Getting started
 The simplest way to start is to run the notebook ``ToU_simple.ipynb`` that demonstrates a simple case study.
 
 More advanced case studies can be found under the root directory of the repo:
-* test_TOU_Market.py
-* test_P2P_Market.py
-* test_Central_Market.py
+- test_TOU_Market.py
+
+- test_P2P_Market.py
+
+- test_Central_Market.py
 
 Platform Structure
 --------------------
@@ -30,9 +32,9 @@ OPLEM is implemented in Python using an object orientated programming approach, 
 Fig. 1 shows a universal modelling language (UML) class diagram of OPLEM with the added features highlighted in different colours. OPLEM has four important base classes: Asset, Network, Market and Participant.
 
 *Note: the class EnergySystem was removed and its main methods were moved now to the Market class
-* Simulation methods can be found under Market.simulate_network_xx
-* Central optimisation methods can be found in the ihhereted subclass Central_Market.market_clearing(). The copper plate option can be passed through nw_cont=False to the market_clearing() method and the one with linear multi-phase distribution network model through nw_const=True (set by default)
-* Open loop and model predictive control simulations can be reproduced as demonstrated in the script 
+  * Simulation methods can be found under Market.simulate_network_xx
+  * Central optimisation methods can be found in the ihhereted subclass Central_Market.market_clearing(). The copper plate option can be passed through nw_cont=False to the market_clearing() method and the one with linear multi-phase distribution network model through nw_const=True (set by default)
+  * Open loop and model predictive control simulations can be reproduced as demonstrated in the script 
 
 .. image:: _imgs/OPLEM_class.svg
   :width: 800 px
@@ -54,6 +56,7 @@ Networks
 .........
 
 OPLEM offers two options for network modelling. 
+
 #. For balanced power flow analysis: the PandapowerNet class from the open-source Python package pandapower can be used.
 
 #. For unbalanced multi-phase power flow analysis: OPLEM offers the `Network_3ph` class.
