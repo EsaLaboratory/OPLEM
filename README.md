@@ -29,7 +29,7 @@ pip install git+https://github.com/EsaLaboratory/OPEN.git
 Getting started
 ----------------
 
-The simplest way to start is to run the notebook `ToU_simple.ipynb` that demonstrate a simple case study.
+The simplest way to start is to run the notebook `ToU_simple.ipynb` that demonstrates a simple case study.
 
 More advanced case studies can be found under the root directory of the repo:
 - test_TOU_Market.py
@@ -38,7 +38,7 @@ More advanced case studies can be found under the root directory of the repo:
 
 License
 --------
-For academic and professional use, please provide attribution to the papers describing OPEN/OPLEM.
+For academic and professional use, please provide attribution to the paper describing OPLEM.
 
 Contributors
 ------------
