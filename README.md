@@ -26,6 +26,8 @@ and activate it: `conda activate <name_env>`
 pip install git+https://github.com/EsaLaboratory/OPLEM.git
 ```
 
+Optimisation algorithms use `mosek` solver, academic license can be requested from [their website](https://www.mosek.com/products/academic-licenses/)
+
 Getting started
 ----------------
 
