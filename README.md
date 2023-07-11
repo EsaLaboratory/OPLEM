@@ -23,7 +23,7 @@ and activate it: `conda activate <name_env>`
 3. install oplem package and its dependencies by running the following 
 
 ```
-pip install git+https://github.com/EsaLaboratory/OPEN.git
+pip install git+https://github.com/EsaLaboratory/OPLEM.git
 ```
 
 Getting started
