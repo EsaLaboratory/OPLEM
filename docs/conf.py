@@ -12,15 +12,17 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-#import os
-#import sys
-#sys.path.insert(0, os.path.abspath('/src/oplem'))
+import os
+import sys
+#sys.path.insert(0, os.path.abspath('../'))
+sys.path.insert(0, os.path.abspath('../../'))
+sys.path.insert(0, os.path.abspath('.'))
 
 
 # -- Project information -----------------------------------------------------
 
 project = u'OPLEM' #'OPEN'
-copyright = u'2022, Chaimaa Essayeh, Yihong Zhou, Thomas Morstyn'
+copyright = u'2023, Chaimaa Essayeh, Yihong Zhou, Thomas Morstyn'
 author = u'Chaimaa Essayeh, Yihong Zhou, Thomas Morstyn'
 
 # The short X.Y version
