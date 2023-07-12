@@ -14,14 +14,14 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../'))
+sys.path.insert(0, os.path.abspath('../src/'))
 
 
 # -- Project information -----------------------------------------------------
 
 project = u'OPLEM' #'OPEN'
-copyright = u'2023, Chaimaa Essayeh, Thomas Morstyn'
-author = u'Chaimaa Essayeh, Thomas Morstyn'
+copyright = u'2023, Chaimaa Essayeh, Yihong Zhou, Thomas Morstyn'
+author = u'Chaimaa Essayeh, Yihong Zhou, Thomas Morstyn'
 
 # The short X.Y version
 version = u'1.1'
