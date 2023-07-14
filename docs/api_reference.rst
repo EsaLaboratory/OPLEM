@@ -4,25 +4,25 @@ OPLEM API Reference
 Assets
 -------
 
-.. automodule:: src.oplem.Assets
+.. automodule:: Assets
   :members:
 
 Networks
 ---------
 
-.. automodule:: src.oplem.Network_3ph_pf
+.. automodule:: Network_3ph_pf
   :members:
 
 Markets
 ---------
 
-.. automodule:: src.oplem.Market
+.. automodule:: Market
   :members:
   
 Participant
 ---------
 
-.. automodule:: src.oplem.Participant
+.. automodule:: Participant
   :members:
 
 
