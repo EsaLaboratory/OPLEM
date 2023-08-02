@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 """
 This module presents a participant.
 A participant can be either a prosumer, an aggregator or an energy provider
