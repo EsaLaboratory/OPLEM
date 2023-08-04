@@ -136,7 +136,6 @@ class BuildingAsset(Asset):
     Returns
     -------
     Building Asset  
-
     """
     
     def __init__(self, Tmax, Tmin, Hmax, Cmax, T0, C, R, CoP_heating, CoP_cooling, Ta, bus_id, dt,
@@ -188,7 +187,6 @@ class BuildingAsset(Asset):
         t : int, default=None
             time interval (over simulation time scale T) for the update
             if None: update is performed over the whole simulation horizon T
-
         """
        
         ##### catch errors:
@@ -211,7 +209,6 @@ class BuildingAsset(Asset):
         enforce_const: bool
             True: enforce indoor temperature to be in [Tmin, Tmax]
             False: update temperature according to Pnet_t
-
         """
 
         t_ems = int(self.dt/self.dt_ems)
@@ -249,7 +246,6 @@ class BuildingAsset(Asset):
             the time start of the update
         enforce_const : bool, default True
             enforce indoor temperature limits constraints or not
-
         """
 
         if np.isscalar(Pnet_ems):
@@ -444,9 +440,8 @@ class BuildingAsset(Asset):
             thermal energy schedule
         P_el : 1d array
             daily electrical schedule
-
         """ 
-
+        
         prob = pic.Problem()
         """
         P_cool = pic.RealVariable('P_cool',self.T_ems)
@@ -493,7 +488,6 @@ class BuildingAsset(Asset):
         -------
         Flex : float
             the flexibility 
-
         """
 
         prob = pic.Problem()
@@ -608,7 +602,6 @@ class StorageAsset(Asset):
     Returns
     -------
     Storage Asset
-
     """
     
     def __init__(self, Emax, Emin, Pmax, Pmin, E0, ET, bus_id, dt, T, dt_ems,
@@ -656,7 +649,6 @@ class StorageAsset(Asset):
             False: update the energy profile based on Pnet
         t0 : int, default=0
             time interval (over simulation time scale T) for the update
-
         """
 
         ##### catch errors:
@@ -678,7 +670,6 @@ class StorageAsset(Asset):
         enforce_const : bool
             True: enforce the operational constraints on E [Emin, Emax]
             False: update the energy profile based on Pnet
-
         """
 
         self.Pnet[t] = Pnet_t
@@ -719,8 +710,7 @@ class StorageAsset(Asset):
             time interval for the update
         enforce_const: bool, default True
             True: enforce indoor temperature limits constraints  [Tmin, Tmax]
-            False: update the energy profile based on Pnet
-        
+            False: update the energy profile based on Pnet 
         """
 
         if np.isscalar(Pnet_ems):
@@ -744,7 +734,6 @@ class StorageAsset(Asset):
             time interval (over simulation tims scale T) for the update 
         enforce_const: bool, default True
             enforce the operational constraints on E ([Emin, Emax]) or not
-
         """
 
         Pnet = (action-1)*self.Pmax[t0]
@@ -764,11 +753,10 @@ class StorageAsset(Asset):
         ----------
         t0: int, optional 
             starting time slot for the polytpe model in optimosation time scale, default=0
-
+            
         Returns
         --------
         (A, b):  (2 dim numpy.ndarray, 1-dim numpy.ndarray)
-
         """
         
         Gamma = toeplitz(self.self_dis**np.arange(self.T_ems-t0), np.zeros(self.T_ems-t0))
@@ -823,7 +811,6 @@ class StorageAsset(Asset):
         --------
         P_ch : 1d array
             daily charging schedule of EV
-
         """ 
 
         nbr_ts = min(T_avail, np.ceil(self.Emax*(1-SOC_arr)/(self.Pmax*self.dt_ems)))
@@ -853,8 +840,7 @@ class StorageAsset(Asset):
         Returns
         --------
         P_ch : 1d array
-            daily charging schedule of EV
-        
+            daily charging schedule of EV       
         """ 
 
         n = np.ceil((T_avail+t_arr)/self.T_ems) + int(not((T_avail+t_arr)%self.T_ems))
@@ -911,7 +897,6 @@ class StorageAsset(Asset):
         --------
         Flex : float
             available flexibility
-
         """ 
 
         n = np.ceil((T_avail+t_arr)/self.T_ems) + int(not((T_avail+t_arr)%self.T_ems))
@@ -973,8 +958,7 @@ class NondispatchableAsset(Asset):
 
     Returns
     -------
-    Non-dispachable Asset
-    
+    Non-dispachable Asset  
     """
 
     def __init__(self, Pnet, Qnet, bus_id, dt, T, dt_ems, T_ems, phases=[0, 1, 2], Pnet_pred=None, Qnet_pred=None, curt=False):
@@ -1015,8 +999,7 @@ class NondispatchableAsset(Asset):
         demand: np.array
             power vector
         qdemand: np.array
-            reactive power vector
-        
+            reactive power vector     
         """
 
         demand, qdemand = np.zeros(self.T_ems-t0), np.zeros(self.T_ems-t0)
@@ -1041,7 +1024,6 @@ class NondispatchableAsset(Asset):
             curtailed amount over the time series (kW)
         t0 : int
             start time interval for the update
-
         """
 
         if np.isscalar(curt):
