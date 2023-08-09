@@ -1,6 +1,12 @@
 OPLEM API Reference
 ====================
 
+Module
+-------
+
+.. automodule: Module
+  :members:
+
 Assets
 -------
 
