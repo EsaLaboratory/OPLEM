@@ -26,40 +26,53 @@ OPLEM Market module has two types of markets:
 __version__ = "1.1.0"
 
 
-#import modules
-import os
-import copy
-from os.path import normpath, join
-import pandas as pd
-import numpy as np
-import pickle
-import time
-import picos as pic
-import oplem.Participant as Participant
-
 
 class Market:
     """
-    This is the name of the class
+    Market class
     
     Parameters
     ----------
-    param1 : float
-        param1 is a float
-    param2 : list, optional, default [0,1,2]
-        description of param2
-        
-        description of param2 
-        
-        description of param2 
+    participants : list of objects
+	Containing details of each participant
+	T_market : int
+	Market horizon
+	dt_market : float
+	time interval duration (hours)
+	P_import : numpy.ndarray
+		max import from the grid (kW)
+	price_imp : numpy.ndarray
+		import prices from the grid (£/kWh)
+	P_export : numpy.ndarray
+		max export to the grid (kW)
+	price_exp : numpy.ndarray
+		export prices to the grid (£/kWh)
     Returns
     -------
-    Class 
+    Market 
     """
     
-    def __init__(self, param1, param2=[0, 1, 2]):
-        self.param1 = param1
-        self.param2 = param2 
+    def __init__(self, participants, dt_market, T_market, price_imp, t_ahead_0=0, P_import=None, P_export=None, price_exp=None, network=None):
+		self.participants = participants
+		self.dt_market = dt_market
+		self.T_market = T_market
+		self.t_ahead_0 = t_ahead_0
+		self.P_import = P_import
+		self.price_imp = price_imp
+		self.P_export = P_export
+		self.price_exp = price_exp
+		self.network = network
+
+
+		if self.P_export ==None and np.all(self.price_exp)==None:
+			self.P_export=np.zeros(self.T_market)
+			self.price_exp=np.zeros(self.T_market)
+		if self.P_export ==None and np.all(self.price_exp)!=None:
+			self.P_export=np.inf*np.ones(self.T_market)	
+		if np.any(self.P_export) !=None and np.all(self.price_exp)==None:
+			raise ValueError('Export power was set to be non-zero, but no values for the export prices were entered')
+		if np.all(self.P_import)==None:
+			self.P_import=np.inf*np.ones(self.T_market)
 
 class subclass1(Module):
     """
