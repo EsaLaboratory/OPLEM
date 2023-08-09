@@ -15,7 +15,7 @@ OPLEM Market module has two types of markets:
 
 (iii) P2P market
 
-(iiii) auction market
+(vi) auction market
 
 (2) The flexibility markets comes with one market
 
@@ -33,6 +33,10 @@ import pickle
 import time
 import picos as pic
 import oplem.Participant as Participant
+
+
+__version__ = "1.1.0"
+
 
 class Market:
 	"""
