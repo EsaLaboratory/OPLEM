@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-OPEN 3 phase networks module
+3-phase networks module
 
-OPEN offers two options for network modelling. For balanced power flow
-analysis, the PandapowerNet class from the open-source python package
-pandapower can be used. For unbalanced multi-phase power flow analysis,
-OPEN offers the Network_3ph class.
+OPLEM offers two options for network modelling. 
+
+(1)The PandapowerNet class from the open-source python package pandapower can be used for balanced power flow analysis. 
+
+(2)For unbalanced multi-phase power flow analysis, OPLEM offers the Network_3ph class.
 
 """
 
@@ -374,7 +375,9 @@ class Network_3ph:
         Solves the linear model based on A. Bernstein, et al., “Load Flow in 
         Multiphase Distribution Networks: Existence, Uniqueness, 
         Non-Singularity and Linear Models,” IEEE Transactions on Power Systems,
-        2018. First run linear_model_setup().
+        2018. 
+        
+        Requires running linear_model_setup() first.
 
         """
         S_loads = np.zeros([self.Y.shape[0]],dtype=np.complex_) 
