@@ -1123,11 +1123,6 @@ class Auction_market(Market):
 		-------
 		market_clearing_outcome: pandas Dataframe
 			the resulting energy exchange
-			----------------------------------------------
-			 id | time | seller | buyer | energy | price |
-			----------------------------------------------
-		        |  	   |       |        |	     |	     |  
-			----------------------------------------------
 
 		"""
 		
