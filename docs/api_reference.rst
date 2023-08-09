@@ -20,16 +20,18 @@ Networks
 .. automodule:: Network_3ph_pf
   :members:
 
-Markets
----------
-
-.. automodule:: Market
-  :members:
-  
 Participant
 ---------
 
 .. automodule:: Participant
   :members:
+
+Markets
+--------
+
+.. automodule:: Market
+  :members:
+  
+
 
 
