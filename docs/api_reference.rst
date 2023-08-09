@@ -2,18 +2,6 @@ OPLEM API Reference
 ====================
 
 
-Module
--------
-
-.. automodule:: Module
-  :members:
-
-ModuleMarket
--------
-
-.. automodule:: ModuleMarket
-  :members:
-
 Assets
 -------
 
