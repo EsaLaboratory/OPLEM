@@ -15,7 +15,7 @@ OPLEM Market module has two types of markets:
 
 (iii) P2P market
 
-(iiii) auction market
+(iv) auction market
 
 (2) The flexibility markets comes with one market
 
@@ -26,7 +26,19 @@ OPLEM Market module has two types of markets:
 __version__ = "1.1.0"
 
 
-class Module:
+#import modules
+import os
+import copy
+from os.path import normpath, join
+import pandas as pd
+import numpy as np
+import pickle
+import time
+import picos as pic
+import oplem.Participant as Participant
+
+
+class Market:
     """
     This is the name of the class
     
