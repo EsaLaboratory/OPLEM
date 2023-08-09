@@ -21,8 +21,10 @@ class Participant:
 		unique identifier for a participant
 	assets : a list of assets' objects
 		assets managed by the participant
-			assets located in the same bus => prosumer
-			assets in different buses => aggregator
+		
+  		assets located in the same bus => prosumer
+		
+  		assets in different buses => aggregator
 
 	Returns
 	---------
@@ -121,10 +123,12 @@ class Participant:
 	def polytope(self, assets, t0=0):
 		"""
         Computes an outer approximation of the aggregated polytope representation of the assets operational constraints
-        Ax <= b, with x=[P_in, P_out]
-                 and P_in/out is the power into and out of the assets over the optimisation horizon T_ems
-                 P_ch>=0 P_dis<0
-        from "A concise, approximate representation of a collection of loads described by polytopes"
+        Ax <= b, 
+	
+ 	with x=[P_in, P_out] and P_in/out is the power into and out of the assets over the optimisation horizon T_ems
+         P_ch>=0 P_dis<0
+        
+	From "A concise, approximate representation of a collection of loads described by polytopes"
         
         Parameters:
         -----------
@@ -136,6 +140,7 @@ class Participant:
         Returns
         --------
         (A_agg, b_agg):  (2 dim numpy.ndarray, 1-dim numpy.ndarray)
+		Aggregated slope, aggregated intercept
 
         """
 
