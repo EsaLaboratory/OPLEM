@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-OPEN Market Module.
+Market Module.
 
 The OPEN Market class has two types of markets:
 
