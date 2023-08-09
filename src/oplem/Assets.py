@@ -302,7 +302,8 @@ class BuildingAsset(Asset):
 
         Returns
         --------
-        slope A, intercept b :  (2 dim numpy.ndarray, 1-dim numpy.ndarray)
+        A, b :  (2 dim numpy.ndarray, 1-dim numpy.ndarray)
+            slope and intercept
         """
 
         ######  Gamma version 1, Pcool>=0 Pnet= Pheat+Pcool, P_thermal =Pheat-Pcool
@@ -771,7 +772,8 @@ class StorageAsset(Asset):
             
         Returns
         --------
-        slope A, intercept b:  (2 dim numpy.ndarray, 1-dim numpy.ndarray)
+        A, b :  (2 dim numpy.ndarray, 1-dim numpy.ndarray)
+            slope and intercept
         """
         
         Gamma = toeplitz(self.self_dis**np.arange(self.T_ems-t0), np.zeros(self.T_ems-t0))
@@ -1068,7 +1070,8 @@ class NondispatchableAsset(Asset):
 
         Returns
         --------
-        slope A, intercept b:  (2 dim numpy.ndarray, 1-dim numpy.ndarray)
+        A, b :  (2 dim numpy.ndarray, 1-dim numpy.ndarray)
+            slope and intercept
         """
 
         A = np.concatenate((np.identity(self.T_ems-t0), np.identity(self.T_ems-t0)), axis=1)
