@@ -142,7 +142,7 @@ class Participant:
 	        (A_agg, b_agg):  (2 dim numpy.ndarray, 1-dim numpy.ndarray)
 			Aggregated slope, aggregated intercept
 
-        """
+        	"""
 
 		list_b = [np.empty(0)]*len(assets) #self.assets_flex
 		#initialise Aunique as A of asset 0
@@ -192,22 +192,23 @@ class Participant:
 	def power_desaggregation(self, p_agg, assets, t_ahead_0=0):
 		"""
 		produces a feasible power vector for each asset in the list from the aggregated power schedule p_agg.
-		from "A concise, approximate representation of a collection of loads described by polytopes"
+		
+  		From "A concise, approximate representation of a collection of loads described by polytopes"
 
 		Parameters
 		----------
 		p_agg : numpy.ndarray
-			a vector containing the aggregated power injection or absoption for each time period over the optimisation horizon [t_ahead_0, T_ems]
+			a vector containing the aggregated power injection or absorption for each time period over the optimisation horizon [t_ahead_0, T_ems]
 		assets : list
 			list of assets objects in the aggregation
 		t_ahead_0 : int, default =0
-        	first time slot of aggregation in an optimisation time scale
+        		first time slot of aggregation in an optimisation time scale
 
 		Returns
 		----------
 		p_disagg : numpy.ndarray
-			2 dimension array of the disaggregated power schedules
-			1st dim: time
+			2 dimension array of the disaggregated power schedules:
+			1st dim: time,
 			2nd dim: assets
 
 		"""
