@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-OPEN Asset module
+Asset module
+
 Asset objects define distributed energy resources (DERs) and loads.
 Attributes include network location, phase connection and real and reactive
 output power profiles over the simulation time-series. 
@@ -9,7 +10,8 @@ Flexible Asset classes have an update control method, which is called by
 EnergySystem simulation methods with control references to update the output
 power profiles and state variables. The update control method also implements
 constraints which limit the implementation of references. 
-OPEN includes the following Asset subclasses: NondispatchableAsset for
+
+OPLEM includes the following Asset subclasses: NondispatchableAsset for
 uncontrollable loads and generation sources, StorageAsset for storage systems
 and BuildingAsset for buildings with flexible heating, ventilation and air
 conditioning (HVAC).
@@ -51,8 +53,10 @@ class Asset:
     T : int
         number of time intervals
     phases : list, optional, default [0,1,2]
-        [0, 1, 2] indicates 3 phase connection \
-        Wye: [0, 1] indicates an a,b connection \
+        [0, 1, 2] indicates 3 phase connection 
+        
+        Wye: [0, 1] indicates an a,b connection 
+        
         Delta: [0] indicates a-b, [1] b-c, [2] c-a
     Returns
     -------
@@ -105,8 +109,10 @@ class BuildingAsset(Asset):
     T_ems : int
         number of time intervals (optimisation time scale)
     phases : list, optional, default [0,1,2]
-        [0, 1, 2] indicates 3 phase connection \
-        Wye: [0, 1] indicates an a,b connection \
+        [0, 1, 2] indicates 3 phase connection 
+        
+        Wye: [0, 1] indicates an a,b connection 
+        
         Delta: [0] indicates a-b, [1] b-c, [2] c-a
     delta : float
         deadband (Degree C)
@@ -186,6 +192,7 @@ class BuildingAsset(Asset):
             enforce indoor temperature limits constraints or not
         t : int, default=None
             time interval (over simulation time scale T) for the update
+            
             if None: update is performed over the whole simulation horizon T
         """
        
@@ -208,6 +215,7 @@ class BuildingAsset(Asset):
             time interval over simulation time scale
         enforce_const: bool
             True: enforce indoor temperature to be in [Tmin, Tmax]
+            
             False: update temperature according to Pnet_t
         """
 
@@ -262,12 +270,12 @@ class BuildingAsset(Asset):
 
         Parameters
         ----------
-        action : 
+        action : {-1,0,1}
             1=heating ON, -1=cooling ON, 0=OFF
         t : int
             time interval for the update
         enforce_const : bool, default True
-            enforce operational constraints on E ([Emin, Emax]) or not
+            enforce operational constraints on Tin ([Tmin, Tmax]) or not
         """
 
         if action ==2:
@@ -283,13 +291,15 @@ class BuildingAsset(Asset):
     def polytope(self, t0=0):
         """
         Computes the polytope representation of the asset operational constraints following the optimisation time scale
-        Ax <= b, with x=[P_h, P_c]
-                 and P_h/c is the heating/cooling power over the optimisation horizon T_ems
-        following "A concise, approximate representation of a collection of loads described by polytopes"
+        Ax <= b, 
+        
+        with x=[P_h, P_c] and P_h/c is the heating/cooling power over the optimisation horizon T_ems
+        
+        Following "A concise, approximate representation of a collection of loads described by polytopes"
 
         Parameters
         ---------
-        t0 : int default 0
+        t0 : int, default 0
             starting time slot for the polytope model in optimisation time scale
 
         Returns
@@ -473,15 +483,17 @@ class BuildingAsset(Asset):
 
     def flexibility(self, T_flex, flex_min=None, flex_type='up'):
         """
-        Compute the flexibility per time slot that can be provided by the HVAC for the flexibility period T_flex
+        Compute the flexibility that can be provided by the HVAC for the flexibility period T_flex
 
         Parameters
         ----------
         T_flex : 1d array
             period of flexibility [t_start, t_end]
-        flex_type : default 'up'
+        flex_type : {'down', 'up'}, default 'up'
             the type of flexibility to provide
+            
             'up'  : to decrease consumption of the HVAC in flexibility period
+            
             'down': to increase consumption of the HVAC in flexibility period
 
         Returns
@@ -538,7 +550,6 @@ class BuildingAsset(Asset):
         else:
             return Flex.value if Flex.value >= flex_min  else 0
 
-# NEEDED FOR OXEMF EV CASE
 class StorageAsset(Asset):
     """
     A storage asset (use for batteries, EVs etc.)
@@ -568,8 +579,10 @@ class StorageAsset(Asset):
     T_ems : int
         number of time intervals (energy management system time horizon)
     phases : list, optional, default [0,1,2]
-        [0, 1, 2] indicates 3 phase connection \
-        Wye: [0, 1] indicates an a,b connection \
+        [0, 1, 2] indicates 3 phase connection 
+        
+        Wye: [0, 1] indicates an a,b connection 
+        
         Delta: [0] indicates a-b, [1] b-c, [2] c-a
     Pmax_abs : float
         max power level (kW)
@@ -646,6 +659,7 @@ class StorageAsset(Asset):
             input powers over the simulation time series (kW)
         enforce_const: bool, default True
             True: enforce the operational constraints on E [Emin, Emax]
+            
             False: update the energy profile based on Pnet
         t0 : int, default=0
             time interval (over simulation time scale T) for the update
@@ -709,7 +723,8 @@ class StorageAsset(Asset):
         t : int
             time interval for the update
         enforce_const: bool, default True
-            True: enforce indoor temperature limits constraints  [Tmin, Tmax]
+            True: enforce the operational constraints on E [Emin, Emax]
+            
             False: update the energy profile based on Pnet 
         """
 
@@ -728,7 +743,7 @@ class StorageAsset(Asset):
 
         Parameters
         ----------
-        action : [-1,0,1]
+        action : {-1,0,1}
             1=charging, -1=discharging, 0=idle
         t : int
             time interval (over simulation tims scale T) for the update 
@@ -744,15 +759,17 @@ class StorageAsset(Asset):
     def polytope(self, t0=0):
         """
         Computes the polytope representation of the asset operational constraints in optimisation time scale
-        Ax <= b, with x=[P_ch, P_dis]
-                 and P_(dis)ch is the (dis)charging power over the optimisation horizon T_ems
-                 P_ch>=0 P_dis<0
-        following "A concise, approximate representation of a collection of loads described by polytopes"
+        Ax <= b, 
+        
+        with x=[P_ch, P_dis] and P_(dis)ch is the (dis)charging power over the optimisation horizon T_ems,
+        P_ch>=0 and P_dis<0
+        
+        Following "A concise, approximate representation of a collection of loads described by polytopes"
 
         Parameters
         ----------
-        t0: int, optional 
-            starting time slot for the polytpe model in optimosation time scale, default=0
+        t0: int, optional, default=0
+            starting time slot for the polytpe model in optimosation time scale
             
         Returns
         --------
@@ -888,9 +905,10 @@ class StorageAsset(Asset):
             desired SOC of EV at departure 
         T_flex : 1d array
             period of flexibility [t_start, t_end]
-        flex_type : default 'up'
+        flex_type : {'down', 'up'}, default 'up'
             the type of flexibility to provide
             'up'   : to decrease consumption of the HVAC in flexibility period
+            
             'down' : to increase consumption of the HVAC in flexibility period
         
         Returns
@@ -953,7 +971,7 @@ class NondispatchableAsset(Asset):
         predicted real input powers over the time series (kW)
     Qnet_pred : float or None
         predicted reactive input powers over the time series (kVar)
-    curt : Default False
+    curt : bool, default False
         if the power can be curtailed or not
 
     Returns
@@ -989,7 +1007,7 @@ class NondispatchableAsset(Asset):
         
         Parameters
         ---------------
-        t0 : int default=0
+        t0 : int, default=0
             first time slot of observation
         q_val: bool, default false
             returns reactive power values or not
@@ -1022,7 +1040,7 @@ class NondispatchableAsset(Asset):
         ----------
         curt : np.array
             curtailed amount over the time series (kW)
-        t0 : int
+        t0 : int, default=0
             start time interval for the update
         """
 
@@ -1039,15 +1057,16 @@ class NondispatchableAsset(Asset):
     def polytope(self, t0):
         """
         Computes the polytope representation of the asset operational constraints following the optimisation time scale
-        Ax <= b, with x=[P_ch, P_dis]
-                 and P_(dis)ch is the (dis)charging power over the optimisation horizon T_ems
-                 P_ch>=0 P_dis<0
-        following "A concise, approximate representation of a collection of loads described by polytopes"
+        Ax <= b, 
+        
+        with x=[P_in, P_out] and P_ in (P_out) is  the absorbed (injected) power over the optimisation horizon T_ems
+        
+        Following "A concise, approximate representation of a collection of loads described by polytopes"
 
         Parameters
         ----------
-        t0: int, optional 
-            starting time slot for the polytpe model in optimosation time scale, default=0
+        t0: int, default=0 
+            starting time slot for the polytpe model in optimosation time scale
 
         Returns
         --------
