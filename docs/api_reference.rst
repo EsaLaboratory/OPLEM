@@ -5,7 +5,7 @@ OPLEM API Reference
 Module
 -------
 
-.. automodule: Module
+.. automodule:: Module
   :members:
 
 Assets
