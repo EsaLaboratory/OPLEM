@@ -255,11 +255,6 @@ class Central_market(Market):
 		------------
 		market_clearing_outcome: pd.dataframe
 			the resulting energy exchange
-		        ----------------------------------------------
-		        id | time | seller | buyer | energy | price |
-		        ----------------------------------------------
-			   |      |	   |	   |        |       |
-		       ----------------------------------------------
 		schedules: list of lists
 		    	assets schedules
 		P_imp: numpy.ndarray
@@ -547,12 +542,7 @@ class ToU_market(Market):
 		Returns
 		-------
 		market_clearing_outcome : pandas Dataframe
-            		the resulting energy exchange:
-		    	----------------------------------------------
-		    	 id | time | seller | buyer | energy | price |
-		    	----------------------------------------------
-			    |	   |	    |	    |	     |	     |	
-		    	----------------------------------------------
+            		the resulting energy exchange
         	schedules : list of lists
 	    		assets schedules
 		"""
@@ -627,7 +617,6 @@ class P2P_market(Market):
 		self.seller_indexes = list(set(self.seller_indexes))
 
 	def P2P_negotiation(self, trade_energy, price_inc, N_p2p_ahead_max, stopping_criterion=None): 
-	#add here participants preferences: e.g., 
 		"""
 	        Returns the outcome of a P2P negotiation procedure
 	
@@ -646,16 +635,11 @@ class P2P_market(Market):
 	        --------
 	        market_clearing_outcome : pandas Dataframe
 	            the resulting energy exchange
-	            ----------------------------------------------
-	             id | time | seller | buyer | energy | price |
-	            ----------------------------------------------
-		        |	|	|       |        |	 |	    
-	            ----------------------------------------------
         	schedules: list of lists
 	    		assets schedules
-        """ 
+         	""" 
 
-        ################
+        	################
 		### Setup Trades
 		################
 		trades_id_col = 0
