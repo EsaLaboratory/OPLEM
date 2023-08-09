@@ -4,17 +4,23 @@
 OPEN Market Module.
 
 The OPEN Market class has two types of markets:
+
 (1) Energy markets, and 
+
 (2) Flexibility markets
 
 (1) The energy market comes with subclasses of the common types of energy markets:
 
 (i) central market
+
 (ii) time of use market
+
 (iii) P2P market
+
 (iiii) auction market
 
 (2) The flexibility markets comes with one market
+
 (i) Capacity limits market
 
 """
@@ -31,33 +37,32 @@ import picos as pic
 import oplem.Participant as Participant
 
 class Market:
+	"""
+	Base Market Class
+	
+	Parameters
+	----------
+	participants : list of objects
+	Containing details of each participant
+	T_market : int
+	Market horizon
+	dt_market : float
+	time interval duration (hours)
+	P_import : numpy.ndarray
+		max import from the grid (kW)
+	price_imp : numpy.ndarray
+		import prices from the grid (£/kWh)
+	P_export : numpy.ndarray
+		max export to the grid (kW)
+	price_exp : numpy.ndarray
+		export prices to the grid (£/kWh)
+	    
+	Returns
+	-------
+	Market object
+		    
+	"""
 	def __init__(self, participants, dt_market, T_market, price_imp, t_ahead_0=0, P_import=None, P_export=None, price_exp=None, network=None):
-		"""
-	    Base Market Class
-
-	    Parameters
-	    ----------
-	    participants : list of objects
-	        Containing details of each participant
-	    T_market : int
-	        Market horizon
-	    dt_market : float
-	        time interval duration (hours)
-		P_import : numpy.ndarray
-			max import from the grid (kW)
-		price_imp : numpy.ndarray
-			import prices from the grid (£/kWh)
-		P_export : numpy.ndarray
-			max export to the grid (kW)
-		price_exp : numpy.ndarray
-			export prices to the grid (£/kWh)
-	    
-	    Returns
-	    -------
-	    Market object
-	    
-	    """
-		
 		self.participants = participants
 		self.dt_market = dt_market
 		self.T_market = T_market
@@ -85,20 +90,27 @@ class Market:
 
 		Parameters:
 		--------------
-		single_iter : bool, default False
+		single_iter : bool, default: False
 			False: simulate network power flow for the remaining time steps of the horizon [t_ahead_0, T_market]
+   
 			True: simulate network power flow for a single optimisation time step t_ahead_0
 		
 		Returns
 		----------
 		output: dict
-			the resulting network output for the simulation time steps
+			the resulting network output for the simulation time steps:
+   
 			buses_Vpu : Voltage magnitude at bus (V)
-            buses_Vang : Voltage angle at bus (rad)
-            buses_Pnet : Real power at bus (kW)
-            buses_Qnet : Reactive power at bus (kVAR)
-            Pnet_market : Real power seen by the market (kW)
-            Qnet_market : Reactive power seen by the market (kVAR)		
+                        
+			buses_Vang : Voltage angle at bus (rad)
+		        
+	                buses_Pnet : Real power at bus (kW)
+		    
+                        buses_Qnet : Reactive power at bus (kVAR)
+		    
+                        Pnet_market : Real power seen by the market (kW)
+		   
+                        Qnet_market : Reactive power seen by the market (kVAR)		
 
 		"""
 
