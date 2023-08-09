@@ -32,7 +32,7 @@ class Participant:
 
 	"""
 	
-	def __init__(self, p_id, assets, *args):
+	def __init__(self, p_id, assets):
 		self.p_id = p_id
 		self.assets = assets
 
@@ -122,25 +122,25 @@ class Participant:
 
 	def polytope(self, assets, t0=0):
 		"""
-        Computes an outer approximation of the aggregated polytope representation of the assets operational constraints
-        Ax <= b, 
+        	Computes an outer approximation of the aggregated polytope representation of the assets operational constraints
+        	Ax <= b, 
 	
- 	with x=[P_in, P_out] and P_in/out is the power into and out of the assets over the optimisation horizon T_ems
-         P_ch>=0 P_dis<0
+ 		with x=[P_in, P_out] and P_in/out is the power into and out of the assets over the optimisation horizon T_ems
+         	P_ch>=0 P_dis<0
         
-	From "A concise, approximate representation of a collection of loads described by polytopes"
+		From "A concise, approximate representation of a collection of loads described by polytopes"
         
-        Parameters:
-        -----------
-        assets : list 
-        	list of assets objects
-        t0 : int, default=0
-        	first time slot of aggregation in an optimisation time scale
-
-        Returns
-        --------
-        (A_agg, b_agg):  (2 dim numpy.ndarray, 1-dim numpy.ndarray)
-		Aggregated slope, aggregated intercept
+	        Parameters:
+	        -----------
+	        assets : list 
+	        	list of assets objects
+	        t0 : int, default=0
+	        	first time slot of aggregation in an optimisation time scale
+	
+	        Returns
+	        --------
+	        (A_agg, b_agg):  (2 dim numpy.ndarray, 1-dim numpy.ndarray)
+			Aggregated slope, aggregated intercept
 
         """
 
@@ -243,7 +243,7 @@ class Participant:
 
         Returns
         ----------------
-        P_demand: np.array
+        P_demand: numpy.ndarray
             power vector
 
         """
