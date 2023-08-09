@@ -79,7 +79,7 @@ class BuildingAsset(Asset):
     ----------
     Tmax : float
         Maximum temperature inside the building (Degree C) optimisation time scale
-    Tmin = float
+    Tmin : float
         Minimum temperature inside the building (Degree C) optimisation time scale
     Hmax : float
         Maximum power consumed by electrical heating (kW)
@@ -108,7 +108,7 @@ class BuildingAsset(Asset):
         time interval duration (optimisation time scale) (s)
     T_ems : int
         number of time intervals (optimisation time scale)
-    phases : list, optional, default [0,1,2]
+    phases : list, default [0,1,2]
         [0, 1, 2] indicates 3 phase connection 
         
         Wye: [0, 1] indicates an a,b connection 
@@ -186,14 +186,12 @@ class BuildingAsset(Asset):
 
         Parameters
         ----------
-        Pnet : numpy.ndarray or float
+        Pnet : numpy.ndarray
             input powers over the simulation time series (kW)
         enforce_const: bool, default True
             enforce indoor temperature limits constraints or not
-        t : int, default=None
-            time interval (over simulation time scale T) for the update
-            
-            if None: update is performed over the whole simulation horizon T
+        t0 : int, default=0
+            starting time interval (over simulation time scale T) for the update
         """
        
         ##### catch errors:
@@ -304,7 +302,7 @@ class BuildingAsset(Asset):
 
         Returns
         --------
-        (A, b) :  (2 dim numpy.ndarray, 1-dim numpy.ndarray)
+        slope A, intercept b :  (2 dim numpy.ndarray, 1-dim numpy.ndarray)
         """
 
         ######  Gamma version 1, Pcool>=0 Pnet= Pheat+Pcool, P_thermal =Pheat-Pcool
@@ -773,7 +771,7 @@ class StorageAsset(Asset):
             
         Returns
         --------
-        (A, b):  (2 dim numpy.ndarray, 1-dim numpy.ndarray)
+        slope A, intercept b:  (2 dim numpy.ndarray, 1-dim numpy.ndarray)
         """
         
         Gamma = toeplitz(self.self_dis**np.arange(self.T_ems-t0), np.zeros(self.T_ems-t0))
@@ -963,13 +961,13 @@ class NondispatchableAsset(Asset):
 
     Parameters
     ----------
-    Pnet : float
+    Pnet : numpy.ndarray
         uncontrolled real input powers over the time series
-    Qnet : float
+    Qnet : numpy.ndarray
         uncontrolled reactive input powers over the time series (kVar)
-    Pnet_pred : float or None
+    Pnet_pred : numpy.ndarray, default None
         predicted real input powers over the time series (kW)
-    Qnet_pred : float or None
+    Qnet_pred : numpy.ndarray, default None
         predicted reactive input powers over the time series (kVar)
     curt : bool, default False
         if the power can be curtailed or not
@@ -1034,7 +1032,7 @@ class NondispatchableAsset(Asset):
 
     def update_ems(self, curt, t0=0):
         """
-        Update the schedule of the asset based on the curt signal form the EMS
+        Update the schedule of the asset based on the curt signal from the EMS
 
         Parameters
         ----------
@@ -1059,7 +1057,7 @@ class NondispatchableAsset(Asset):
         Computes the polytope representation of the asset operational constraints following the optimisation time scale
         Ax <= b, 
         
-        with x=[P_in, P_out] and P_ in (P_out) is  the absorbed (injected) power over the optimisation horizon T_ems
+        with x=[P_in, P_out] and P_in (P_out) is  the absorbed (injected) power over the optimisation horizon T_ems
         
         Following "A concise, approximate representation of a collection of loads described by polytopes"
 
@@ -1070,7 +1068,7 @@ class NondispatchableAsset(Asset):
 
         Returns
         --------
-        (A, b):  (2 dim numpy.ndarray, 1-dim numpy.ndarray)
+        slope A, intercept b:  (2 dim numpy.ndarray, 1-dim numpy.ndarray)
         """
 
         A = np.concatenate((np.identity(self.T_ems-t0), np.identity(self.T_ems-t0)), axis=1)
