@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Market Module.
-
-The OPEN Market class has two types of markets:
+OPLEM Market module has two types of markets:
 
 (1) Energy markets, and 
 
@@ -22,8 +20,8 @@ The OPEN Market class has two types of markets:
 (2) The flexibility markets comes with one market
 
 (i) Capacity limits market
-
 """
+
 
 #import modules
 import os
@@ -59,9 +57,9 @@ class Market:
 	    
 	Returns
 	-------
-	Market object
-		    
+	Market object	    
 	"""
+	
 	def __init__(self, participants, dt_market, T_market, price_imp, t_ahead_0=0, P_import=None, P_export=None, price_exp=None, network=None):
 		self.participants = participants
 		self.dt_market = dt_market
@@ -186,6 +184,7 @@ class Market:
 			the resulting network object for [t_ahead_0, T_market] time steps
 		
 		"""
+		
 		network_pf = []
 		assets_all = []
 		for par in self.participants:
@@ -256,17 +255,17 @@ class Central_market(Market):
 		------------
 		market_clearing_outcome: pd.dataframe
 			the resulting energy exchange
-	            ----------------------------------------------
-	             id | time | seller | buyer | energy | price |
-	            ----------------------------------------------
-				|	|	   |		|		|		 |	     |
-	            ----------------------------------------------
-	    schedules: list of lists
-	    	assets schedules
-	    P_imp: np.array
-	    	imported power upstream
-	    P_exp: np.array
-	    	exported power upstream
+		        ----------------------------------------------
+		        id | time | seller | buyer | energy | price |
+		        ----------------------------------------------
+			   |      |	   |	   |        |       |
+		       ----------------------------------------------
+		schedules: list of lists
+		    	assets schedules
+		P_imp: numpy.ndarray
+		    	imported power upstream
+		P_exp: numpy.ndarray
+		    	exported power upstream
 
 		"""
 
@@ -548,15 +547,14 @@ class ToU_market(Market):
 		Returns
 		-------
 		market_clearing_outcome : pandas Dataframe
-            the resulting energy exchange
-            ----------------------------------------------
-             id | time | seller | buyer | energy | price |
-            ----------------------------------------------
-			|	|	   |		|		|		 |	     |
-            ----------------------------------------------
-        schedules : list of lists
-	    	assets schedules
-
+            		the resulting energy exchange:
+		    	----------------------------------------------
+		    	 id | time | seller | buyer | energy | price |
+		    	----------------------------------------------
+			    |	   |	    |	    |	     |	     |	
+		    	----------------------------------------------
+        	schedules : list of lists
+	    		assets schedules
 		"""
 			
 		list_clearing, schedules, outputs = [], [], []
@@ -584,9 +582,10 @@ class P2P_market(Market):
 	
 	Parameters
 	------------
-	fees : 3 dim np.array
+	fees : 3 dim numpy.ndarray
 		the fees the peers have to pay to the DNO for using the physical infrastructure
-		fees[t,i,j]: the fees of transfering energy between participant i and participant j at time t
+		
+                fees[t,i,j]: the fees of transfering energy between participant i and participant j at time t
 	
 	"""
 
@@ -630,30 +629,30 @@ class P2P_market(Market):
 	def P2P_negotiation(self, trade_energy, price_inc, N_p2p_ahead_max, stopping_criterion=None): 
 	#add here participants preferences: e.g., 
 		"""
-        Returns the outcome of a P2P negotiation procedure
-
-        Parameters
-        ----------
-        trade_energy : float
-        	the unit amount of energy to trade (kWh)
-        price_inc: float
-        	the incremental step of the peers prices
-        N_p2p_ahead_max: int
-        	maximum number of contracts between 2 peers
-        stopping_criterion: int
-        	number of iterations that the negociation will make before stopping
-
-        Returns
-        --------
-        market_clearing_outcome : pandas Dataframe
-            the resulting energy exchange
-            ----------------------------------------------
-             id | time | seller | buyer | energy | price |
-            ----------------------------------------------
-			|	|	   |		|		|		 |	     |
-            ----------------------------------------------
-        schedules: list of lists
-	    	assets schedules
+	        Returns the outcome of a P2P negotiation procedure
+	
+	        Parameters
+	        ----------
+	        trade_energy : float
+	        	the unit amount of energy to trade (kWh)
+	        price_inc: float
+	        	the incremental step of the peers prices
+	        N_p2p_ahead_max: int
+	        	maximum number of contracts between 2 peers
+	        stopping_criterion: int
+	        	number of iterations that the negociation will make before stopping
+	
+	        Returns
+	        --------
+	        market_clearing_outcome : pandas Dataframe
+	            the resulting energy exchange
+	            ----------------------------------------------
+	             id | time | seller | buyer | energy | price |
+	            ----------------------------------------------
+		        |	|	|       |        |	 |	    
+	            ----------------------------------------------
+        	schedules: list of lists
+	    		assets schedules
         """ 
 
         ################
@@ -1007,12 +1006,12 @@ class Auction_market(Market):
 		Returns
 		-------
 		market_clearing_outcome: pandas Dataframe
-            the resulting energy exchange
-            ----------------------------------------------
-             id | time | seller | buyer | energy | price |
-            ----------------------------------------------
-			|	|	   |		|		|		 |	     |
-            ----------------------------------------------
+            		the resulting energy exchange
+		    ----------------------------------------------
+		     id | time | seller | buyer | energy | price |
+		    ----------------------------------------------
+			|      |	|       |        |	 |	     
+		    ----------------------------------------------
 
 		"""
 		
@@ -1055,7 +1054,7 @@ class Auction_market(Market):
 
 class Capacity_limits(Market):
 	"""
-	Retruns the maximum capacity to absorb and inject per node per time step
+	Returns the maximum capacity to absorb and inject per node per time step
 	following the paper [put link here]
 	"""
 	def __init__(self, participants, dt_market, T_market, price_imp, t_ahead_0=0, P_import=None, P_export=None, price_exp=None, network=None):
@@ -1065,20 +1064,22 @@ class Capacity_limits(Market):
 	def capacity_limits(epsilon, Cfirm, Sigma):
 		"""
 		Returns the max capacities to absorb/inject per each node for each time step
+  
 		Parameters
 		----------
 		epsilon: float ]0.5, 1]
 			the probabilistic error, probabilistic guarantee = 1-epsilon
+   
 			for a deterministic solution (with no probabilistic guarantee, take epsilon=0.5)
 		Cfirm: float generally [15, 18]*1e3 kW
 			firm capacity of the transfomer upstream
-		Sigma: list of np.array
+		Sigma: list of numpy.ndarray
 			each element of the list stores the variance of the inflexible load at time step t, 
-		returns
+		Returns
 		-------
-		Cmax: np.array
+		Cmax: numpy.ndarray
 			max capacity to absorb, dimensions: (T_market, Nbr of nodes)
-		Cmin: np.array
+		Cmin: numpy.ndarray
 			max capacity to inject  (<=0), , dimensions: (T_market, Nbr of nodes)
 		"""
 		
