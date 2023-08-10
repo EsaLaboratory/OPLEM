@@ -104,14 +104,6 @@ html_static_path = ['_static']
 # 'searchbox.html']``.
 #
 # html_sidebars = {}
-# html_logo = "_imgs/OxEMF_logo.png"
-# html_theme_options = {
-    # 'logo': 'OxEMF_logo.png',
-    # 'logo_name': 'false',
-    # 'fixed_sidebar': 'true',
-#}
-
-
 
 
 # -- Options for HTMLHelp output ---------------------------------------------
