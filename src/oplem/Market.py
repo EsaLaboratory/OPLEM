@@ -311,9 +311,9 @@ class Central_market(Market):
 			+----+------+--------+-------+--------+-------+
 		schedules: list of numpy.ndarrays
 			each array contains an asset's schedule
-		P_imp: numpy.ndarray (``T_market``-``t_ahead_0``,)
+		P_imp: numpy.ndarray (``T_market-t_ahead_0``,)
 			imported power upstream
-		P_exp: numpy.ndarray (``T_market``-``t_ahead_0``,)
+		P_exp: numpy.ndarray (``T_market-t_ahead_0``,)
 			exported power upstream
 
 		"""
@@ -331,6 +331,17 @@ class Central_market(Market):
 		P_demand = participant_all.nd_demand(self.t_ahead_0)
 		P_demand = np.sum(P_demand, axis=1)
 
+		index_assets_nd_per_bus =  [[] for _ in range(len(buses))]
+		for a, asset in enumerate(participant_all.assets_nd):
+			b_idx=buses.index(asset.bus_id)
+			index_assets_nd_per_bus[b_idx].append(a)
+
+		index_assets_flex_per_bus =  [[] for _ in range(len(buses))]
+		for a, asset in enumerate(participant_all.assets_flex):
+			b_idx=buses.index(asset.bus_id)
+			index_assets_flex_per_bus[b_idx].append(a)
+
+
 		prob = pic.Problem()
 		Pimp = pic.RealVariable('Pimp', self.T_market-self.t_ahead_0)
 		Pexp = pic.RealVariable('Pexp', self.T_market-self.t_ahead_0)
@@ -344,6 +355,7 @@ class Central_market(Market):
 		# account for network constraints
 			A_Pslack_wye_flex_list, A_Pslack_del_flex_list, A_vlim_wye_flex_list, A_vlim_del_flex_list, A_line_wye_flex_list, A_line_del_flex_list = [], [], [], [], [], []
 			A_Pslack_wye_nd_list, A_Pslack_del_nd_list, A_vlim_wye_nd_list, A_vlim_del_nd_list, A_line_wye_nd_list, A_line_del_nd_list = [], [], [], [], [], []
+			A_op=[]
 		
 			for t_ems in range(self.T_market-self.t_ahead_0):
 
@@ -416,6 +428,7 @@ class Central_market(Market):
 		for a, asset in enumerate(participant_all.assets_flex):
 			A, b = asset.polytope(self.t_ahead_0)
 			prob.add_constraint(A*x[:, a] <= b)
+			A_op.append(A)
 		
 		#curtailment		
 		for a, asset in enumerate(participant_all.assets_nd):
@@ -447,6 +460,10 @@ class Central_market(Market):
 			dual_vbus_max = np.zeros([self.T_market-self.t_ahead_0,N_load_bus_phases])
 			dual_vbus_min = np.zeros([self.T_market-self.t_ahead_0,N_load_bus_phases])
 			dual_iline_max = np.zeros([self.T_market-self.t_ahead_0,self.network.N_phases*self.network.N_lines])
+
+			dual_oper_const = np.zeros([6*(self.T_market-self.t_ahead_0),len(participant_all.assets_flex)])
+			dual_curt_max_const = np.zeros([self.T_market-self.t_ahead_0,len(participant_all.assets_nd)])
+			dual_curt_min_const = np.zeros([self.T_market-self.t_ahead_0,len(participant_all.assets_nd)])
 	        
 			const_index=0
 			for t in range(self.T_market-self.t_ahead_0):
@@ -465,19 +482,49 @@ class Central_market(Market):
 						for ph in range(self.network.N_phases):
 							dual_iline_max[t, line_ij+ph] = np.squeeze(prob.get_constraint(const_index).dual)
 							const_index += 1
-
-
-	        ###############################
-			LMP_P_wye_flex = np.zeros((self.T_market-self.t_ahead_0, len(participant_all.assets_flex)))
-			LMP_P_del_flex = np.zeros((self.T_market-self.t_ahead_0, len(participant_all.assets_flex)))
-
-			LMP_P_wye_nd = np.zeros((self.T_market-self.t_ahead_0, len(participant_all.assets_nd)))
-			LMP_P_del_nd = np.zeros((self.T_market-self.t_ahead_0, len(participant_all.assets_nd)))
 			
-			#CHECK INDEXES 
+			for flex in range(len(participant_all.assets_flex)):
+				dual_oper_const[:, flex] = np.squeeze(prob.get_constraint(const_index).dual)
+				const_index += 1
+
+			for nd in range(len(participant_all.assets_nd)):
+				dual_curt_max_const[:, nd] = np.squeeze(prob.get_constraint(const_index).dual)
+				const_index += 1
+				dual_curt_min_const[:, nd] = np.squeeze(prob.get_constraint(const_index).dual)
+				const_index += 1
+
+
+			pickle.dump((dual_P_slack), open( "Results\\Central\\dual_P_slack.p", "wb" ) )
+			pickle.dump((dual_vbus_max), open( "Results\\Central\\dual_vbus_max.p", "wb" ) )
+			pickle.dump((dual_vbus_min), open( "Results\\Central\\dual_vbus_min.p", "wb" ) )
+			pickle.dump((dual_iline_max), open( "Results\\Central\\dual_iline_max.p", "wb" ) )
+			pickle.dump((dual_oper_const), open( "Results\\Central\\dual_oper_const.p", "wb" ) )
+			pickle.dump((dual_curt_max_const), open( "Results\\Central\\dual_curt_max_const.p", "wb" ) )
+			pickle.dump((dual_curt_min_const), open( "Results\\Central\\dual_curt_min_const.p", "wb" ) )
+
+			pickle.dump((A_Pslack_wye_flex_list), open( "Results\\Central\\APyflex.p", "wb" ) ) 
+			pickle.dump((A_Pslack_del_flex_list), open( "Results\\Central\\APdflex.p", "wb" ) )
+			pickle.dump((A_vlim_wye_flex_list), open( "Results\\Central\\AVyflex.p", "wb" ) )
+			pickle.dump((A_vlim_del_flex_list), open( "Results\\Central\\AVdflex.p", "wb" ) )
+			pickle.dump((A_line_wye_flex_list), open( "Results\\Central\\ALyflex.p", "wb" ) )
+			pickle.dump((A_line_del_flex_list), open( "Results\\Central\\ALdflex.p", "wb" ) )
+
+			pickle.dump((A_Pslack_wye_nd_list), open( "Results\\Central\\APynd.p", "wb" ) )
+			pickle.dump((A_Pslack_del_nd_list), open( "Results\\Central\\APdnd.p", "wb" ) )
+			pickle.dump((A_vlim_wye_nd_list), open( "Results\\Central\\AVynd.p", "wb" ) )
+			pickle.dump((A_vlim_del_nd_list), open( "Results\\Central\\AVdnd.p", "wb" ) )
+			pickle.dump((A_line_wye_nd_list), open( "Results\\Central\\ALynd.p", "wb" ) )
+			pickle.dump((A_line_del_nd_list), open( "Results\\Central\\ALdnd.p", "wb" ) )
+
+			pickle.dump((A_op), open( "Results\\Central\\A_op.p", "wb" ) )
+
+
+
+			DLMPwye = np.zeros((self.T_market-self.t_ahead_0, N_load_bus_phases))
+			DLMPdel = np.zeros((self.T_market-self.t_ahead_0, N_load_bus_phases))
 
 			for t in range(self.T_market-self.t_ahead_0):
-				# G.T*dual(p_0) + K.T*(dual v min - dual v max) - J.T*dual i 
+				# dual(p_0)*G.T + (dual v max - dual v min)*K.T + dual i*J.T +dual op*A_op +/- (dual curt plus - dual curt minus)
 
 				#######################################################################################################
 				A_line_wye_flex, A_line_del_flex= np.array(A_line_wye_flex_list[t][0]), np.array(A_line_del_flex_list[t][0])
@@ -491,37 +538,63 @@ class Central_market(Market):
 					#stack all 
 					A_line_wye_nd = np.concatenate((A_line_wye_nd, A_line_wye_nd_list[t][ij]), axis=0)
 					A_line_del_nd = np.concatenate((A_line_del_nd, A_line_del_nd_list[t][ij]), axis=0)
-				#print('A_line_del_nd shape', A_line_del_nd.shape)
+				############################################################################################################
 
-			########################################################################################################
-				LMP_P_wye_flex[t,:] = 1/self.dt_market*(
-					                                    A_Pslack_wye_flex_list[t]*dual_P_slack[t]  #1e3*
-					                                  - np.dot(A_vlim_wye_flex_list[t].T,dual_vbus_max[t,:]) #1e3*
-					                                  + np.dot(A_vlim_wye_flex_list[t].T,dual_vbus_min[t,:]) #1e3*
-					                                  - np.dot(A_line_wye_flex.T,dual_iline_max[t,:])  #1e3*
-					                                  )
-				LMP_P_del_flex[t,:] = 1/self.dt_market*(
-					                                    A_Pslack_del_flex_list[t]*dual_P_slack[t]  #1e3*
-					                                  - np.dot(A_vlim_del_flex_list[t].T,dual_vbus_max[t,:]) #1e3*
-					                                  + np.dot(A_vlim_del_flex_list[t].T,dual_vbus_min[t,:]) #1e3*
-					                                  - np.dot(A_line_del_flex.T,dual_iline_max[t,:]) #1e3*
-					                                  )
+				for b, bus in enumerate(buses):
+					nd_indices = index_assets_nd_per_bus[b]
+					flex_indices = index_assets_flex_per_bus[b]
 
-				LMP_P_wye_nd[t,:] = 1/self.dt_market*(
-					                                    A_Pslack_wye_nd_list[t]*dual_P_slack[t] #1e3*
-					                                  - np.dot(A_vlim_wye_nd_list[t].T,dual_vbus_max[t,:]) #1e3*
-					                                  + np.dot(A_vlim_wye_nd_list[t].T,dual_vbus_min[t,:]) #1e3*
-					                                  - np.dot(A_line_wye_nd.T,dual_iline_max[t,:]) #1e3*
-					                                  )
-				LMP_P_del_nd[t,:] = 1/self.dt_market*(
-					                                    A_Pslack_del_nd*dual_P_slack[t] #1e3*
-					                                  - np.dot(A_vlim_del_nd_list[t].T,dual_vbus_max[t,:]) #1e3*
-					                                  + np.dot(A_vlim_del_nd_list[t].T,dual_vbus_min[t,:]) #1e3*
-					                                  - np.dot(A_line_del_nd.T,dual_iline_max[t,:])  #1e3*
-					                                  )
-			
-			pickle.dump((LMP_P_wye_nd), open( "Results\\Central\\LMPwye.p", "wb" ) )
-			pickle.dump((LMP_P_del_nd), open( "Results\\Central\\LMPdel.p", "wb" ) )
+					for ndi in nd_indices:
+
+						if np.all(participant_all.assets_nd[ndi].Pnet_ems) <=0:
+							sign_curt =1
+						else: sign_curt =-1
+
+						for phase in participant_all.assets_nd[ndi].phases:
+							#print('ndi', ndi, 'phases:',participant_all.assets_nd[ndi].phases)
+							#print('phase', phase, 'for ndi', ndi, 'in bus:', b, bus)
+							DLMPwye[t,3*(bus-1)+phase] += dual_P_slack[t]*A_Pslack_wye_nd_list[t][ndi]
+							+  np.dot( np.asarray([dual_vbus_max[t,:] - dual_vbus_min[t,:]]) ,\
+							           A_vlim_wye_nd_list[t][:, ndi][:, np.newaxis]
+							         )
+							+  np.dot( np.asarray([dual_iline_max[t,:]]) , A_line_wye_nd[:, ndi][:, np.newaxis] )
+							+  sign_curt*(dual_curt_max_const[t, ndi] - dual_curt_min_const[t, ndi])
+
+							DLMPdel[t,3*(bus-1)+phase] += dual_P_slack[t]*A_Pslack_del_nd_list[t][ndi]
+							+  np.dot( np.asarray([dual_vbus_max[t,:] - dual_vbus_min[t,:]]) ,\
+							           A_vlim_del_nd_list[t][:, ndi][:, np.newaxis]
+							          )
+							+  np.dot( np.asarray([dual_iline_max[t,:]]) , A_line_del_nd[:, ndi][:, np.newaxis] )
+							+  sign_curt*(dual_curt_max_const[t, ndi] - dual_curt_min_const[t, ndi])
+
+							#print('DLMP[t,b]', DLMPwye[t, 3*(bus-1)+phase])
+
+					for fi in flex_indices:
+
+						lambdaAop = np.dot( np.asarray([dual_oper_const[:,fi]]) , A_op[fi])
+
+						for phase in participant_all.assets_flex[fi].phases: 
+							#print('fi', fi, 'phases:',participant_all.assets_flex[fi].phases)
+							#print('phase', phase, 'for fi', fi, 'in bus:', b, bus)
+							DLMPwye[t,3*(bus-1)+phase] += dual_P_slack[t]*A_Pslack_wye_flex_list[t][fi]
+							+  np.dot( np.asarray([dual_vbus_max[t,:] - dual_vbus_min[t,:]]) ,\
+							           A_vlim_wye_flex_list[t][:, fi][:, np.newaxis]
+							         )
+							+  np.dot( np.asarray([dual_iline_max[t,:]]) , A_line_wye_flex[:, fi][:, np.newaxis] )
+							+  lambdaAop[0, t] + lambdaAop[0,t+self.T_market-self.t_ahead_0]
+
+							DLMPdel[t,3*(bus-1)+phase] += dual_P_slack[t]*A_Pslack_del_flex_list[t][fi]
+							+  np.dot( np.asarray([dual_vbus_max[t,:] - dual_vbus_min[t,:]]) ,\
+							           A_vlim_del_flex_list[t][:, fi][:, np.newaxis]
+							         )
+							+  np.dot( np.asarray([dual_iline_max[t,:]]) , A_line_del_flex[:, fi][:, np.newaxis] )
+							+  lambdaAop[0,t] + lambdaAop[0, t+self.T_market-self.t_ahead_0]
+
+							#print('DLMP[t,b]', DLMPwye[t, 3*(bus-1)+phase])
+
+
+			pickle.dump((DLMPwye), open( "Results\\Central\\DLMPwye_nonconst.p", "wb" ) )
+			pickle.dump((DLMPdel), open( "Results\\Central\\DLMPdel_nonconst.p", "wb" ) )
 
 		if len(participant_all.assets_flex):
 			x = np.array(x.value)				
@@ -539,8 +612,8 @@ class Central_market(Market):
 				if asset.type == 'ND':
 					if self.nw_const:
 						if self.network.bus_df[self.network.bus_df['number']==bus_id]['connect'].values[0]=='Y':
-							price = LMP_P_wye_nd[:, nd]
-						else: price = LMP_P_del_nd[:, nd] 
+							price = DLMPwye[:, 3*(bus_id-1)+asset.phases[0]]#LMP_P_wye_nd[:, nd]
+						else: price = DLMPdel[:, 3*(bus_id-1)+asset.phases[0]] #LMP_P_del_nd[:, nd] 
 					#asset.Pnet_ems[self.t_ahead_0:] = asset.mpc_demand(self.t_ahead_0)-p_curt[:, nd]
 					#sch = asset.mpc_demand(self.t_ahead_0)-p_curt[:, nd]
 					#schedules[p_idx].append(asset.mpc_demand(self.t_ahead_0)-p_curt[:, nd])
@@ -551,8 +624,8 @@ class Central_market(Market):
 				else:
 					if self.nw_const:
 						if self.network.bus_df[self.network.bus_df['number']==bus_id]['connect'].values[0]=='Y':
-							price = LMP_P_wye_flex[:, flex]
-						else: price = LMP_P_del_flex[:, flex] 
+							price = DLMPwye[:, 3*(bus_id-1)+asset.phases[0]] #LMP_P_wye_flex[:, flex]
+						else: price = DLMPdel[:, 3*(bus_id-1)+asset.phases[0]] #LMP_P_del_flex[:, flex] 
 
 					if asset.type == 'storage':
 						asset.update_ems(x[:self.T_market-self.t_ahead_0, flex]+ x[self.T_market-self.t_ahead_0:, flex], self.t_ahead_0, enforce_const=False)
