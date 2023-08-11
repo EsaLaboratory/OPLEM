@@ -6,4 +6,3 @@ pandas
 PICOS
 scikit-learn
 scipy
-oplem
