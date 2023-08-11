@@ -665,7 +665,7 @@ class P2P_market(Market):
 	P2P market returns the bilateral contracts between peers following the algorithm proposed by 
 	Morstyn et. Al, in [2]_
 
- 	..[2] T. Morstyn, A. Teytelboym and M. D. Mcculloch, "Bilateral Contract Networks for Peer-to-Peer Energy Trading," in IEEE Transactions on Smart Grid, 
+ 	.. [2] T. Morstyn, A. Teytelboym and M. D. Mcculloch, "Bilateral Contract Networks for Peer-to-Peer Energy Trading," in IEEE Transactions on Smart Grid, 
          vol. 10, no. 2, pp. 2026-2035, March 2019, doi: 10.1109/TSG.2017.2786668.
 	
 	Parameters
