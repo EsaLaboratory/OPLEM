@@ -20,9 +20,14 @@ Participant
 .. automodule:: Participant
   :members:
 
-Markets
+Market
 --------
 
 .. automodule:: Market
   :members:
-  
+
+Markets
+--------
+
+.. automodule:: Markets
+  :members:
