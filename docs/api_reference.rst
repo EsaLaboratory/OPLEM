@@ -25,9 +25,3 @@ Market
 
 .. automodule:: Market
   :members:
-
-Markets
---------
-
-.. automodule:: Markets
-  :members:
