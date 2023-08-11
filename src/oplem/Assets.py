@@ -292,15 +292,12 @@ class BuildingAsset(Asset):
 
     def polytope(self, t0=0):
         """
-        Computes the polytope representation of the asset operational constraints following the optimisation time scale
+        Computes the polytope representation of the asset operational constraints in the optimisation time scale
         Ax <= b, 
         
         with x=[P_h, P_c] and P_h/c is the heating/cooling power over the optimisation horizon ``T_ems``
         
         Following [1]_
-
-        .. [1] Suhail Barot, Josh A. Taylor, A concise, approximate representation of a collection of loads described by polytopes, International Journal of Electrical
-        Power & Energy Systems, Volume 84, 2017, Pages 55-63, ISSN 0142-0615.
 
         Parameters
         ---------
