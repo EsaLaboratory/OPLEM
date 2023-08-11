@@ -130,17 +130,17 @@ class BuildingAsset(Asset):
     gamma : float
         Coefficient of ambient temperature in the temperature dynamics
         equation (N/A)
-    Pnet : numpy.ndarray
+    Pnet : numpy.ndarray (``T``,)
         Input real power over the simulation time series (kW)
-    Pnet_ems : numpy.ndarray
+    Pnet_ems : numpy.ndarray (``T_ems``,)
         Input real power over the optimisation time series (kW)
-    Qnet : numpy.ndarray
+    Qnet : numpy.ndarray (``T``,)
         Input reactive power over the simulation time series(kVAR)
-    Qnet_ems : numpy.ndarray
+    Qnet_ems : numpy.ndarray (``T_ems``,)
         Input reactive power over the optimisation time series(kVAR)
-    Tin : numpy.ndarray
+    Tin : numpy.ndarray (``T``,)
         indoor temperature in the building over the simulation time series (Degree C)
-    Tin_ems: numpy.ndarray
+    Tin_ems: numpy.ndarray (``T_ems``,)
         indoor temperature in the building over the optimisation time series (Degree C)
 
     Returns
@@ -190,12 +190,12 @@ class BuildingAsset(Asset):
 
         Parameters
         ----------
-        Pnet : numpy.ndarray
+        Pnet : numpy.ndarray (``T``,)
             input powers over the simulation time series (kW)
         enforce_const: bool, default True
             enforce indoor temperature limits constraints or not
         t0 : int, default=0
-            starting time interval (over simulation time scale T) for the update
+            starting time interval (over simulation time scale ``T``) for the update
         """
        
         ##### catch errors:
@@ -250,10 +250,10 @@ class BuildingAsset(Asset):
 
         Parameters
         -------------
-        Pnet_ems : 1d array
+        Pnet_ems : numpy.ndarray (``T_ems``,)
             the EMS schedule
         t0 : int
-            the time start of the update
+            the time start of the update, default=0
         enforce_const : bool, default True
             enforce indoor temperature limits constraints or not
         """
@@ -277,7 +277,7 @@ class BuildingAsset(Asset):
         t : int
             time interval for the update
         enforce_const : bool, default True
-            enforce operational constraints on Tin ([Tmin, Tmax]) or not
+            enforce operational constraints on ``Tin`` ([Tmin, Tmax]) or not
         """
 
         if action ==2:
@@ -295,9 +295,12 @@ class BuildingAsset(Asset):
         Computes the polytope representation of the asset operational constraints following the optimisation time scale
         Ax <= b, 
         
-        with x=[P_h, P_c] and P_h/c is the heating/cooling power over the optimisation horizon T_ems
+        with x=[P_h, P_c] and P_h/c is the heating/cooling power over the optimisation horizon ``T_ems``
         
-        Following "A concise, approximate representation of a collection of loads described by polytopes"
+        Following _[1]
+
+        ..[1] Suhail Barot, Josh A. Taylor, A concise, approximate representation of a collection of loads described by polytopes, International Journal of Electrical
+        Power & Energy Systems, Volume 84, 2017, Pages 55-63, ISSN 0142-0615.
 
         Parameters
         ---------
@@ -306,7 +309,7 @@ class BuildingAsset(Asset):
 
         Returns
         --------
-        A, b :  (2 dim numpy.ndarray, 1-dim numpy.ndarray)
+        A, b : numpy.ndarray (6``T_ems``, 2``T_ems``), numpy.ndarray (6``T_ems``,)
             slope and intercept
         """
 
@@ -402,9 +405,9 @@ class BuildingAsset(Asset):
         
         Returns
         --------
-        P_th : 1d array
+        P_th : numpy.ndarray (``T_ems``,)
             thermal energy schedule
-        P_el : 1d array
+        P_el : numpy.ndarray (``T_ems``,)
             daily electrical schedule
         """ 
 
@@ -444,14 +447,14 @@ class BuildingAsset(Asset):
 
         Parameters
         ----------
-        toup : 1d array 
+        toup : numpy.ndarray (``T_ems``,) 
             time of use price
         
         Returns
         -------
-        P_th : 1d array 
+        P_th : numpy.ndarray (``T_ems``,) 
             thermal energy schedule
-        P_el : 1d array
+        P_el : numpy.ndarray (``T_ems``,)
             daily electrical schedule
         """ 
         
@@ -490,7 +493,7 @@ class BuildingAsset(Asset):
 
         Parameters
         ----------
-        T_flex : 1d array
+        T_flex : numpy.ndarray
             period of flexibility [t_start, t_end]
         flex_type : {'down', 'up'}, default 'up'
             the type of flexibility to provide
@@ -559,13 +562,13 @@ class StorageAsset(Asset):
 
     Parameters
     ----------
-    Emax : numpy.ndarray
+    Emax : numpy.ndarray (``T_ems``,)
         maximum energy levels over the time series (kWh)
-    Emin : numpy.ndarray
+    Emin : numpy.ndarray (``T_ems``,)
         minimum energy levels over the time series (kWh)
-    Pmax : numpy.ndarray
+    Pmax : numpy.ndarray (``T_ems``,)
         maximum input powers over the time series (kW)
-    Pmin : numpy.ndarray
+    Pmin : numpy.ndarray (``T_ems``,)
         minimum input powers over the time series (kW)
     E0 : float
         initial energy level (kWh)
@@ -602,17 +605,17 @@ class StorageAsset(Asset):
     self_dis : float, default 1
         self discharging rate
 
-    E : numpy.ndarray
+    E : numpy.ndarray (``T``,)
         Energy profile over the simulation time series (kWh)
-    E_ems : numpy.ndarray
+    E_ems : numpy.ndarray (``T_ems``,)
         Energy profile over the optimisarion time series (kWh)
-    Pnet : numpy.ndarray
+    Pnet : numpy.ndarray (``T``,)
         Input real power over the simulation time series (kW)
-    Pnet_ems : numpy.ndarray
+    Pnet_ems : numpy.ndarray (``T_ems``,)
         Input real power over the optimisation time series (kW)
-    Qnet : numpy.ndarray
+    Qnet : numpy.ndarray (``T``,)
         Input reactive power over the simulation time series(kVAR)
-    Qnet_ems : numpy.ndarray
+    Qnet_ems : numpy.ndarray (``T_ems``,)
         Input reactive power over the optimisation time series(kVAR)
 
     Returns
@@ -661,11 +664,11 @@ class StorageAsset(Asset):
         Pnet : float or numpy.ndarray
             input powers over the simulation time series (kW)
         enforce_const: bool, default True
-            True: enforce the operational constraints on E [Emin, Emax]
+            True: enforce the operational constraints on ``E`` [Emin, Emax]
             
-            False: update the energy profile based on Pnet
+            False: update the energy profile based on ``Pnet``
         t0 : int, default=0
-            time interval (over simulation time scale T) for the update
+            time interval (over simulation time scale ``T``) for the update
         """
 
         ##### catch errors:
@@ -721,10 +724,10 @@ class StorageAsset(Asset):
 
         Parameters
         ----------
-        Pnet : float
+        Pnet_ems : float or numpy.ndarray
             input powers over the time series (kW)
-        t : int
-            time interval for the update
+        t : int, default=0
+            first time interval for the update (in optimisation time scale)
         enforce_const: bool, default True
             True: enforce the operational constraints on E [Emin, Emax]
             
@@ -749,9 +752,9 @@ class StorageAsset(Asset):
         action : {-1,0,1}
             1=charging, -1=discharging, 0=idle
         t : int
-            time interval (over simulation tims scale T) for the update 
+            time interval (over optimisation time scale ``T_ems``) for the update 
         enforce_const: bool, default True
-            enforce the operational constraints on E ([Emin, Emax]) or not
+            enforce the operational constraints on ``E`` ([Emin, Emax]) or not
         """
 
         Pnet = (action-1)*self.Pmax[t0]
@@ -767,16 +770,16 @@ class StorageAsset(Asset):
         with x=[P_ch, P_dis] and P_(dis)ch is the (dis)charging power over the optimisation horizon T_ems,
         P_ch>=0 and P_dis<0
         
-        Following "A concise, approximate representation of a collection of loads described by polytopes"
+        Following [1]_
 
         Parameters
         ----------
-        t0: int, optional, default=0
-            starting time slot for the polytpe model in optimosation time scale
+        t0: int, default=0
+            starting time slot for the polytpe model in optimisation time scale
             
         Returns
         --------
-        A, b :  (2 dim numpy.ndarray, 1-dim numpy.ndarray)
+        A, b :  numpy.ndarray (6``T_ems``, 2``T_ems``), numpy.ndarray (6``T_ems``,)
             slope and intercept
         """
         
@@ -825,12 +828,12 @@ class StorageAsset(Asset):
             index of time slot correspnding to the plug-in of the EV
         T_avail : int
             number of time slots the EV remained plugged-in
-        SOC_arr : float
+        SOC_arr : float [0,1]
             SOC of EV at arrival 
 
         Returns
         --------
-        P_ch : 1d array
+        P_ch : numpy.ndarray (``T_ems``,)
             daily charging schedule of EV
         """ 
 
@@ -855,12 +858,12 @@ class StorageAsset(Asset):
             SOC of EV at arrival 
         SOC_dep : float [0,1]
             desired SOC of EV at departure 
-        toup : 1d array (1, T_ems)
+        toup : numpy.ndarray (``T_ems``,)
             time of use price
 
         Returns
         --------
-        P_ch : 1d array
+        P_ch : numpy.ndarray (``T_ems``,)
             daily charging schedule of EV       
         """ 
 
@@ -895,7 +898,7 @@ class StorageAsset(Asset):
 
     def EV_flexibility(self, t_arr, T_avail, SOC_arr, SOC_dep, T_flex, flex_type='up'):
         """
-        Compute the flexibility per time slot that can be provided by the EV for the period T_flex  
+        Compute the flexibility that can be provided by the EV for the period T_flex  
 
         Parameters
         ----------
@@ -967,14 +970,14 @@ class NondispatchableAsset(Asset):
 
     Parameters
     ----------
-    Pnet : numpy.ndarray
-        uncontrolled real input powers over the time series
-    Qnet : numpy.ndarray
-        uncontrolled reactive input powers over the time series (kVar)
-    Pnet_pred : numpy.ndarray, default None
-        predicted real input powers over the time series (kW)
-    Qnet_pred : numpy.ndarray, default None
-        predicted reactive input powers over the time series (kVar)
+    Pnet : numpy.ndarray (``T``,)
+        uncontrolled real input powers over the simulation time series
+    Qnet : numpy.ndarray (``T``,)
+        uncontrolled reactive input powers over the simulation time series (kVar)
+    Pnet_pred : numpy.ndarray (``T``,), default None
+        predicted real input powers over the simulation time series (kW)
+    Qnet_pred : numpy.ndarray (``T``,), default None
+        predicted reactive input powers over the simulation time series (kVar)
     curt : bool, default False
         if the power can be curtailed or not
 
@@ -1018,9 +1021,9 @@ class NondispatchableAsset(Asset):
 
         Returns
         ----------------
-        demand: np.array
+        demand: numpy.ndarray (``T_ems``,)
             power vector
-        qdemand: np.array
+        qdemand: numpy.ndarray (``T_ems``,)
             reactive power vector     
         """
 
@@ -1042,8 +1045,8 @@ class NondispatchableAsset(Asset):
 
         Parameters
         ----------
-        curt : np.array
-            curtailed amount over the time series (kW)
+        curt : numpy.ndarray
+            curtailed amount over the optimisation time series (kW)
         t0 : int, default=0
             start time interval for the update
         """
@@ -1065,7 +1068,7 @@ class NondispatchableAsset(Asset):
         
         with x=[P_in, P_out] and P_in (P_out) is  the absorbed (injected) power over the optimisation horizon T_ems
         
-        Following "A concise, approximate representation of a collection of loads described by polytopes"
+        Following [1]_
 
         Parameters
         ----------
