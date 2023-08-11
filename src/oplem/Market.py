@@ -7,6 +7,24 @@ OPLEM Market module has two types of markets:
 (1) Energy markets, and 
 
 (2) Flexibility markets
+
+(1) The energy market comes with subclasses of the common types of energy markets:
+
+(i) central market
+
+(ii) time of use market
+
+(iii) P2P market
+
+(vi) auction market
+
+(2) The flexibility markets comes with one market
+
+(i) Capacity limits marketOPLEM Market module has two types of markets:
+
+(1) Energy markets, and 
+
+(2) Flexibility markets
 """
 
 
@@ -19,7 +37,7 @@ import numpy as np
 import pickle
 import time
 import picos as pic
-import oplem.Participant as Participant
+#import oplem.Participant as Participant
 
 
 __version__ = "1.1.0"
