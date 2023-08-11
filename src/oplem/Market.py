@@ -16,15 +16,11 @@ OPLEM Market module has two types of markets:
 
 (iii) P2P market
 
-(vi) auction market
+(iv) auction market
 
 (2) The flexibility markets comes with one market
 
-(i) Capacity limits marketOPLEM Market module has two types of markets:
-
-(1) Energy markets, and 
-
-(2) Flexibility markets
+(i) Capacity limits market
 """
 
 
@@ -102,8 +98,8 @@ class Market:
 	def simulate_network_pp(self, single_iter=False):
 		"""
 		simulate the power flow of the network if the network is created using pandaspower
-
-		Parameters:
+  
+  		Parameters
 		--------------
 		single_iter : bool, default: False
 			False: simulate network power flow for the remaining time steps of the horizon [t_ahead_0, T_market]
@@ -307,6 +303,11 @@ class Central_market(Market):
 		------------
 		market_clearing_outcome: pd.dataframe
 			the resulting energy exchange
+   			----------------------------------------------
+	             	id | time | seller | buyer | energy | price |
+	            	----------------------------------------------
+			   |	  |	   |	   |        |	    |
+	            	----------------------------------------------
 		schedules: list of lists
 			assets schedules
 		P_imp: numpy.ndarray
@@ -661,8 +662,8 @@ class P2P_market(Market):
 	
 	Parameters
 	------------
-	participants : list of objects
-	Containing details of each participant
+	participants : list of participant instances
+		Containing details of each participant
 	T_market : int
 		Market horizon
 	dt_market : float
