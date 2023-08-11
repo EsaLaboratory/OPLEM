@@ -201,10 +201,10 @@ class Network_3ph:
 
     def linear_model_setup(self, v_net_lin0, S_wye_lin0, S_del_lin0):
         """
-        Set up a linear model based on A. Bernstein, et al., “Load Flow in 
-        Multiphase Distribution Networks: Existence, Uniqueness, 
-        Non-Singularity and Linear Models,” IEEE Transactions on Power Systems,
-        2018.
+        Set up a linear model based on A. Bernstein, et al., [3]_
+        
+        ..[3] Load Flow in Multiphase Distribution Networks: Existence, Uniqueness, 
+        Non-Singularity and Linear Models, IEEE Transactions on Power Systems, 2018.
 
         Parameters
         ----------
@@ -372,12 +372,9 @@ class Network_3ph:
             
     def linear_pf(self):
         """
-        Solves the linear model based on A. Bernstein, et al., “Load Flow in 
-        Multiphase Distribution Networks: Existence, Uniqueness, 
-        Non-Singularity and Linear Models,” IEEE Transactions on Power Systems,
-        2018. 
+        Solves the linear model based on A. Bernstein, et al. [3]_
         
-        Requires running linear_model_setup() first.
+        Requires running ``linear_model_setup()`` first.
 
         """
         S_loads = np.zeros([self.Y.shape[0]],dtype=np.complex_) 
@@ -475,22 +472,22 @@ class Network_3ph:
 
         Returns
         ----------
-        A_Pslack_flex : 2d array
+        A_Pslack_flex : numpy.ndarray
             submatrix(G) for which the rows corespond to buses connected to flexible loads
-        A_Pslack_nd : 2d array
+        A_Pslack_nd : numpy.ndarray
             submatrix(G) for which the rows corespond to buses connected to nondispatchable loads
         b_Pslack : float
             g_0
 
-        A_vlim_flex : 2d array
+        A_vlim_flex : numpy.ndarray
             submatrix(K) for which the rows corespond to buses connected to flexible loads
-        A_vlim_nd : 2d array
+        A_vlim_nd : numpy.ndarray
             submatrix(K) for which the rows corespond to buses connected to nondispatchable loads
         b_vlim : float
             k_0
-        v_abs_min_vec : 1d array
+        v_abs_min_vec : numpy.ndarray
             vector of maximum voltage limit
-        v_abs_max_vec : 1d array
+        v_abs_max_vec : numpy.ndarray
             vector of minimum voltage limit
 
         A_lines_flex : list
@@ -498,27 +495,27 @@ class Network_3ph:
         A_lines_nd : list
             list of submatrices(J) over lines connected to nondispatchable loads
         
-        A_Pslack_wye_flex : 2d array
-            submatrix(G) for which the rows corespond to buses connected to flexible loads, type='Y'
-        A_Pslack_del_flex : 2d array
-            submatrix(G) for which the rows corespond to buses connected to flexible loads, type='Delta'
-        A_vlim_wye_flex : 2d array
-            submatrix(K) for which the rows corespond to buses connected to flexible loads, type='Y'
-        A_vlim_del_flex : 2d array
-            submatrix(K) for which the rows corespond to buses connected to flexible loads, type='Delta'
+        A_Pslack_wye_flex : numpy.ndarray
+            submatrix(G) for which the rows correspond to buses connected to flexible loads, type='Y'
+        A_Pslack_del_flex : numpy.ndarray
+            submatrix(G) for which the rows correspond to buses connected to flexible loads, type='Delta'
+        A_vlim_wye_flex : numpy.ndarray
+            submatrix(K) for which the rows correspond to buses connected to flexible loads, type='Y'
+        A_vlim_del_flex : numpy.ndarray
+            submatrix(K) for which the rows correspond to buses connected to flexible loads, type='Delta'
         A_line_wye_flex : list
             list of submatrices(J) over lines connected to flexible loads, type='Y' 
         A_line_del_flex : list
             list of submatrices(J) over lines connected to flexible loads, type='Delta'
         
-        A_Pslack_wye_nd : 2d array
-            submatrix(G) for which the rows corespond to buses connected to nondispatchable loads, type='Y'
-        A_Pslack_del_nd : 2d array
-            submatrix(G) for which the rows corespond to buses connected to nondispatchable loads, type='Delta'
-        A_vlim_wye_nd : 2d array
-            submatrix(K) for which the rows corespond to buses connected to nondispatchable loads, type='Y' 
-        A_vlim_del_nd : 2d array
-            submatrix(K) for which the rows corespond to buses connected to nondispatchable loads, type='Delta'
+        A_Pslack_wye_nd : numpy.ndarray
+            submatrix(G) for which the rows correspond to buses connected to nondispatchable loads, type='Y'
+        A_Pslack_del_nd : numpy.ndarray
+            submatrix(G) for which the rows correspond to buses connected to nondispatchable loads, type='Delta'
+        A_vlim_wye_nd : numpy.ndarray
+            submatrix(K) for which the rows correspond to buses connected to nondispatchable loads, type='Y' 
+        A_vlim_del_nd : numpy.ndarray
+            submatrix(K) for which the rows correspond to buses connected to nondispatchable loads, type='Delta'
         A_line_wye_nd : list
             list of submatrices(J) over lines connected to nondispatchable loads, type='Y'
         A_line_del_nd : list
@@ -754,26 +751,27 @@ class Network_3ph:
         assets_nd : list
             list of the non_dispatchable assets in the network
         t : int
-            time
+            first time slot of computation
 
         Returns
         --------
-        A_Pslack_nd : 2d array
+        A_Pslack_nd : numpy.ndarray
             submatrix(G) for which the rows corespond to buses connected to nondispatchable loads
         b_Pslack : float
             g_0
-        A_vlim_nd : 2d array
+        A_vlim_nd : numpy.ndarray
             submatrix(K) for which the rows corespond to buses connected to nondispatchable loads
         b_vlim : float
             k_0
-        v_abs_min_vec :
-        v_abs_max_vec : 1d array
+        v_abs_min_vec : numpy.ndarray
             vector of minimum voltage limit
+        v_abs_max_vec : numpy.ndarray
+            vector of maximum voltage limit
         A_lines : list
             list of submatrices(J) over lines connected to nondispatchable loads
         i_lim : float
             j0
-        i_abs_max :  1d array
+        i_abs_max :  numpy.array
             vector of maximum thermal limit
         
         """
@@ -890,8 +888,9 @@ class Network_3ph:
     def zbus_pf(self):
         """
         Solves the nonlinear power flow problem using the Z-bus method 
-        from M. Bazrafshan, N. Gatsis, “Comprehensive Modeling of Three-Phase 
-        Distribution Systems via the Bus Admittance Matrix,” IEEE Transactions 
+        from M. Bazrafshan, N. Gatsis [4]_
+        
+        ..[4] Comprehensive Modeling of Three-Phase Distribution Systems via the Bus Admittance Matrix,” IEEE Transactions 
         on Power Systems, 2018.
 
         """
