@@ -49,11 +49,11 @@ class Asset:
     bus_id : float
         id number of the bus in the network
     dt : float
-        simulation time interval duration (s)
+        simulation time interval duration (h)
     T : int
         number of simulation time intervals
     dt_ems : float
-        optimisation time interval duration (s)
+        optimisation time interval duration (h)
     T_ems : int
         number of optimisation time intervals
     phases : list, optional, default [0,1,2].
@@ -105,11 +105,11 @@ class BuildingAsset(Asset):
     bus_id : float
         id number of the bus in the network
     dt : float
-        simulation time interval duration (s)
+        simulation time interval duration (h)
     T : int
         number of simulation time intervals
     dt_ems : float
-        time interval duration (optimisation time scale) (s)
+        time interval duration (optimisation time scale) (h)
     T_ems : int
         number of time intervals (optimisation time scale)
     phases : list, default [0,1,2]
@@ -577,13 +577,13 @@ class StorageAsset(Asset):
     bus_id : float
         id number of the bus in the network
     dt : float
-        time interval duration (s)
+        simulation time interval duration (h)
     T : int
-        number of time intervals
+        number of simulation time intervals
     dt_ems : float
-        time interval duration (energy management system time horizon) (s)
+        optimisation time interval duration (h)
     T_ems : int
-        number of time intervals (energy management system time horizon)
+        number of optimisation time intervals 
     phases : list, optional, default [0,1,2]
         [0, 1, 2] indicates 3 phase connection 
         
