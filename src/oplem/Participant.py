@@ -130,7 +130,7 @@ class Participant:
         
 		From "A concise, approximate representation of a collection of loads described by polytopes"
         
-	        Parameters:
+	        Parameters
 	        -----------
 	        assets : list 
 	        	list of assets objects
