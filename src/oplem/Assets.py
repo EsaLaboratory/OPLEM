@@ -297,9 +297,9 @@ class BuildingAsset(Asset):
         
         with x=[P_h, P_c] and P_h/c is the heating/cooling power over the optimisation horizon ``T_ems``
         
-        Following _[1]
+        Following [1]_
 
-        ..[1] Suhail Barot, Josh A. Taylor, A concise, approximate representation of a collection of loads described by polytopes, International Journal of Electrical
+        .. [1] Suhail Barot, Josh A. Taylor, A concise, approximate representation of a collection of loads described by polytopes, International Journal of Electrical
         Power & Energy Systems, Volume 84, 2017, Pages 55-63, ISSN 0142-0615.
 
         Parameters
@@ -309,7 +309,7 @@ class BuildingAsset(Asset):
 
         Returns
         --------
-        A, b : numpy.ndarray (6``T_ems``, 2``T_ems``), numpy.ndarray (6``T_ems``,)
+        A, b : (6 (``T_ems-t_ahead_0``), 2 (``T_ems-t_ahead_0``)), numpy.ndarray (6 (``T_ems-t_ahead_0``,)
             slope and intercept
         """
 
@@ -779,7 +779,7 @@ class StorageAsset(Asset):
             
         Returns
         --------
-        A, b :  numpy.ndarray (6``T_ems``, 2``T_ems``), numpy.ndarray (6``T_ems``,)
+        A, b :  numpy.ndarray (6 (``T_ems-t_ahead_0``), 2 (``T_ems-t_ahead_0``)), numpy.ndarray (6 (``T_ems-t_ahead_0``,)
             slope and intercept
         """
         
@@ -1073,11 +1073,11 @@ class NondispatchableAsset(Asset):
         Parameters
         ----------
         t0: int, default=0 
-            starting time slot for the polytpe model in optimosation time scale
+            starting time slot for the polytope model in optimisation time scale
 
         Returns
         --------
-        A, b :  (2 dim numpy.ndarray, 1-dim numpy.ndarray)
+        A, b :  (6 (``T_ems-t_ahead_0``), 2 (``T_ems-t_ahead_0``)), numpy.ndarray (6 (``T_ems-t_ahead_0``,)
             slope and intercept
         """
 
