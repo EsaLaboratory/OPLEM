@@ -301,7 +301,7 @@ class Central_market(Market):
 
 		Returns
 		------------
-		market_clearing_outcome: pd.dataframe
+		market_clearing_outcome: pandas Dataframe
 			the resulting energy exchange
    
    			+----+------+--------+-------+--------+-------+
@@ -309,11 +309,11 @@ class Central_market(Market):
   			+====+======+========+=======+========+=======+
   			|    |	    |	     |	     |        |	      |
 			+----+------+--------+-------+--------+-------+
-		schedules: list of lists
-			assets schedules
-		P_imp: numpy.ndarray
+		schedules: list of numpy.ndarrays
+			each array contains an asset's schedule
+		P_imp: numpy.ndarray (``T_market``-``t_ahead_0``,)
 			imported power upstream
-		P_exp: numpy.ndarray
+		P_exp: numpy.ndarray (``T_market``-``t_ahead_0``,)
 			exported power upstream
 
 		"""
@@ -589,7 +589,7 @@ class ToU_market(Market):
 	Parameters
 	----------
 	participants : list of objects
-	Containing details of each participant
+		Containing details of each participant
 	T_market : int
 		Market horizon
 	dt_market : float
@@ -632,8 +632,14 @@ class ToU_market(Market):
 		-------
 		market_clearing_outcome : pandas Dataframe
 			the resulting energy exchange
-		schedules : list of lists
-			assets schedules
+
+      			+----+------+--------+-------+--------+-------+
+  			| id | time | seller | buyer | energy | price |
+  			+====+======+========+=======+========+=======+
+  			|    |	    |	     |	     |        |	      |
+			+----+------+--------+-------+--------+-------+
+		schedules : list of numpy.ndarrays
+			list of assets schedules
 		"""
 			
 		list_clearing, schedules, outputs = [], [], []
@@ -657,9 +663,10 @@ class ToU_market(Market):
 class P2P_market(Market):
 	"""
 	P2P market returns the bilateral contracts between peers following the algorithm proposed by 
-	Morstyn et. Al, in 
+	Morstyn et. Al, in [2]_
 
-	"Bilateral Contract Networks for Peer-to-Peer Energy Trading"
+ 	..[2] T. Morstyn, A. Teytelboym and M. D. Mcculloch, "Bilateral Contract Networks for Peer-to-Peer Energy Trading," in IEEE Transactions on Smart Grid, 
+         vol. 10, no. 2, pp. 2026-2035, March 2019, doi: 10.1109/TSG.2017.2786668.
 	
 	Parameters
 	------------
@@ -685,10 +692,10 @@ class P2P_market(Market):
 		useful for market clearings that account for network constraints,
 
 		required to run simulate_network_3ph
-	fees : 3 dim numpy.ndarray
+	fees : numpy.ndarray (``T_market-t_ahead_0``, N, N)
 		the fees the peers have to pay to the DNO for using the physical infrastructure
 		
-		fees[t,i,j]: the fees of transfering energy between participant i and participant j at time t
+		fees[t,i,j]: the fees of transferring energy between participant i and participant j at time t
 	
 	"""
 
@@ -742,14 +749,20 @@ class P2P_market(Market):
 		N_p2p_ahead_max: int
 			maximum number of contracts between 2 peers
 		stopping_criterion: int
-			number of iterations that the negociation will make before stopping
+			number of iterations that the negotiation will make before stopping
 
 		Returns
 		--------
 		market_clearing_outcome : pandas Dataframe
 		    the resulting energy exchange
-		schedules: list of lists
-			assets schedules
+
+	            +----+------+--------+-------+--------+-------+
+  		    | id | time | seller | buyer | energy | price |
+  		    +====+======+========+=======+========+=======+
+  		    |    |	|	 |	 |        |       |
+		    +----+------+--------+-------+--------+-------+
+		schedules: list of numpy.ndarrays
+			list of assets schedules
 		"""
 
         ################
@@ -1087,7 +1100,7 @@ class Auction_market(Market):
 	Parameters
 	----------
 	participants : list of objects
-	Containing details of each participant
+		Containing details of each participant
 	T_market : int
 		Market horizon
 	dt_market : float
@@ -1110,6 +1123,12 @@ class Auction_market(Market):
 		required to run simulate_network_3ph
 	offers: pandas Dataframe
 		id_participant, quantity of energy, price
+
+  		    +----------------+------+--------+-------+
+  		    | id_participant | time | energy | price |
+  		    +================+======+========+=======+
+  		    |   	     |	    |        |       |
+		    +----------------+------+-------+--------+
 	
 	Returns
 	-------
@@ -1143,6 +1162,12 @@ class Auction_market(Market):
 		-------
 		market_clearing_outcome: pandas Dataframe
 			the resulting energy exchange
+
+      			+----+------+--------+-------+--------+-------+
+  		    	| id | time | seller | buyer | energy | price |
+  		    	+====+======+========+=======+========+=======+
+  		   	|    |	    |	     |	     |        |       |
+		  	+----+------+--------+-------+--------+-------+
 
 		"""
 		
@@ -1186,7 +1211,7 @@ class Auction_market(Market):
 class Capacity_limits(Market):
 	"""
 	Returns the maximum capacity to absorb and inject per node per time step
-	following the paper [put link here]
+	following the paper [put ref here]
 	"""
 	def __init__(self, participants, dt_market, T_market, price_imp, t_ahead_0=0, P_import=None, P_export=None, price_exp=None, network=None):
 		Market.__init__(self, participants, dt_market, T_market, price_imp, t_ahead_0=t_ahead_0, P_import=P_import, P_export=P_export, price_exp=price_exp, network=network)
@@ -1205,14 +1230,14 @@ class Capacity_limits(Market):
 		Cfirm: float generally [15, 18]*1e3 kW
 			firm capacity of the transfomer upstream
 		Sigma: list of numpy.ndarray
-			each element of the list stores the variance of the inflexible load at time step t 
+			each element of the list stores the variance of the inflexible loads at time step t 
 
 		Returns
 		-------
-		Cmax: numpy.ndarray
-			max capacity to absorb, dimensions: (T_market, Nbr of nodes)
-		Cmin: numpy.ndarray
-			max capacity to inject  (<=0), , dimensions: (T_market, Nbr of nodes)
+		Cmax: numpy.ndarray (``T_market-t_ahead_0``, Nbr of nodes)
+			max capacity to absorb: 
+		Cmin: numpy.ndarray (``T_market-t_ahead_0``, Nbr of nodes)
+			max capacity to inject  (<=0)
 		"""
 		
 		assets_all = []
