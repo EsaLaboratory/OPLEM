@@ -203,7 +203,7 @@ class Network_3ph:
         """
         Set up a linear model based on A. Bernstein, et al., [3]_
         
-        ..[3] Load Flow in Multiphase Distribution Networks: Existence, Uniqueness, 
+        .. [3] Load Flow in Multiphase Distribution Networks: Existence, Uniqueness, 
         Non-Singularity and Linear Models, IEEE Transactions on Power Systems, 2018.
 
         Parameters
@@ -890,7 +890,7 @@ class Network_3ph:
         Solves the nonlinear power flow problem using the Z-bus method 
         from M. Bazrafshan, N. Gatsis [4]_
         
-        ..[4] Comprehensive Modeling of Three-Phase Distribution Systems via the Bus Admittance Matrix,” IEEE Transactions 
+        .. [4] Comprehensive Modeling of Three-Phase Distribution Systems via the Bus Admittance Matrix,” IEEE Transactions 
         on Power Systems, 2018.
 
         """
