@@ -49,10 +49,14 @@ class Asset:
     bus_id : float
         id number of the bus in the network
     dt : float
-        time interval duration
+        simulation time interval duration (s)
     T : int
-        number of time intervals
-    phases : list, optional, default [0,1,2]
+        number of simulation time intervals
+    dt_ems : float
+        optimisation time interval duration (s)
+    T_ems : int
+        number of optimisation time intervals
+    phases : list, optional, default [0,1,2].
         [0, 1, 2] indicates 3 phase connection 
         
         Wye: [0, 1] indicates an a,b connection 
@@ -95,15 +99,15 @@ class BuildingAsset(Asset):
         Coefficient of performance of the heat pump (N/A)
     CoP_cooling : float
         Coefficient of performance of the chiller (N/A)
-    Ta : numpy.ndarray
-        Ambient temperature (Degree C) in optimisation time scale
+    Ta : numpy.ndarray (``T_ems``,)
+        Ambient temperature (Degree C) in the optimisation time scale
 
     bus_id : float
         id number of the bus in the network
     dt : float
-        time interval duration (s)
+        simulation time interval duration (s)
     T : int
-        number of time intervals
+        number of simulation time intervals
     dt_ems : float
         time interval duration (optimisation time scale) (s)
     T_ems : int
