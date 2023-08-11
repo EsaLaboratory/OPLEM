@@ -51,15 +51,15 @@ class Market:
 		Market horizon
 	dt_market : float
 		time interval duration (hours)
-	price_imp : numpy.ndarray
+	price_imp : numpy.ndarray (``T_market``,)
 		import prices from the grid (£/kWh)
 	t_ahead_0: int
 		starting time slot of market clearing
-	P_import : numpy.ndarray
+	P_import : numpy.ndarray (``T_market``,)
 		max import from the grid (kW)	
-	P_export : numpy.ndarray
+	P_export : numpy.ndarray (``T_market``,)
 		max export to the grid (kW)
-	price_exp : numpy.ndarray
+	price_exp : numpy.ndarray (``T_market``,)
 		export prices to the grid (£/kWh)
 	network : object, default=None
 		the network infrastructure of the market
@@ -256,7 +256,7 @@ class Central_market(Market):
 	Parameters
 	----------
 	participants : list of objects
-	Containing details of each participant
+		Containing details of each participant
 	T_market : int
 		Market horizon
 	dt_market : float
