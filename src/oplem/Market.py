@@ -303,11 +303,11 @@ class Central_market(Market):
 		------------
 		market_clearing_outcome: pd.dataframe
 			the resulting energy exchange
-   			----------------------------------------------
-	             	id | time | seller | buyer | energy | price |
-	            	----------------------------------------------
-			   |	  |	   |	   |        |	    |
-	            	----------------------------------------------
+   			+-----------+---------------------------------+
+  			| id | time | seller | buyer | energy | price |
+  			+===========+=================================+
+  			|    |	    |	     |	     |        |	      |
+			+-----------+---------------------------------+
 		schedules: list of lists
 			assets schedules
 		P_imp: numpy.ndarray
