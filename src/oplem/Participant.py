@@ -128,7 +128,7 @@ class Participant:
  		with x=[P_in, P_out] and P_in/out is the power into and out of the assets over the optimisation horizon T_ems
          	P_ch>=0 P_dis<0
         
-		From "A concise, approximate representation of a collection of loads described by polytopes"
+		From [1]_
         
 	        Parameters
 	        -----------
@@ -139,7 +139,7 @@ class Participant:
 	
 	        Returns
 	        --------
-	        (A_agg, b_agg):  (2 dim numpy.ndarray, 1-dim numpy.ndarray)
+	        (A_agg, b_agg):  numpy.ndarray (6``T_ems-t0``,2``T_ems-t0``), numpy.ndarray (6``T_ems-t0``,)
 			Aggregated slope, aggregated intercept
 
         	"""
@@ -193,7 +193,7 @@ class Participant:
 		"""
 		produces a feasible power vector for each asset in the list from the aggregated power schedule p_agg.
 		
-  		From "A concise, approximate representation of a collection of loads described by polytopes"
+  		From [1]_
 
 		Parameters
 		----------
