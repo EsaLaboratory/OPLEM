@@ -9,10 +9,10 @@ import time
 import matplotlib.pyplot as plt
 
 
-from System.Network_3ph_pf import Network_3ph
-import System.Assets as AS
-import System.Participant as Participant
-from System.Market import ToU_market
+from oplem.Network_3ph_pf import Network_3ph
+import oplem.Assets as AS
+import oplem.Participant as Participant
+from oplem.Market import ToU_market
 
 np.random.seed(1000)
 #######################################
