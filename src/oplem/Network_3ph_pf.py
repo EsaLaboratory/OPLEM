@@ -17,8 +17,11 @@ import matplotlib.pyplot as plt
 from scipy.linalg import block_diag
 import sys, os, time
 import copy
+import importlib.resources
 
 __version__ = "1.0.0"
+
+path = importlib.resources.files('oplem')
 
 def strCpx2cpx(X):
     i=0
