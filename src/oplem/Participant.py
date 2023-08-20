@@ -232,7 +232,7 @@ class Participant:
 		#####!!!!!!!!!!!!!!!!!! some values are neeear zeros, convert to zero before proceeding!!!!!!!!!!!!!!!!!!
 		return np.array(x.value), opt
               
-	def nd_demand(self, t0):
+	def nd_demand(self, t0=0):
 		"""
         a power vector composed of the actual realisation of the current time step and the predicted values for the future time steps for all
         the non dispatchale assets of the participant
