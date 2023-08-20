@@ -17,11 +17,9 @@ import matplotlib.pyplot as plt
 from scipy.linalg import block_diag
 import sys, os, time
 import copy
-#import importlib.resources
+import importlib.resources
 
 __version__ = "1.0.0"
-
-path = importlib.resources.files('oplem')
 
 def strCpx2cpx(X):
     i=0
@@ -1661,6 +1659,7 @@ class Network_3ph:
     def setup_network_eulv_reduced(self, updateYZ=True):
         #path = os.path.dirname(os.path.abspath(__file__))
         #path = os.path.dirname(os.path.dirname(__file__))
+        path = importlib.resources.files('oplem')
         file_location = os.path.join(path, 'Data', 'networks', 'eulv_reduced/')
         buses_csv = pd.read_csv(file_location + 'eulv_bus_df.csv')
         lines_csv = pd.read_csv(file_location + 'Lines2.txt', sep=' ',
@@ -1824,6 +1823,7 @@ class Network_3ph:
 
         #path = os.path.dirname(os.path.abspath(__file__))
         #path = os.path.dirname(os.path.dirname(__file__))
+        path = importlib.resources.files('oplem')
         file_location = os.path.join(path, 'Data', 'networks', 'feeder123/')
 
         bus_load_data = pd.read_excel(file_location + 'spot loads data.xls', header=[2, 3])
@@ -2033,6 +2033,7 @@ class Network_3ph:
         #os.path.dirname(os.path.dirname(path))
         #path = os.path.dirname(os.path.abspath(__file__))
         #path = os.path.dirname(os.path.dirname(__file__))
+        path = importlib.resources.files('oplem')
         self.feederLoc = os.path.join(path,'Data','networks',
                                       ntwkName+'_dss',ntwkName)
         
