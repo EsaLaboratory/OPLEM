@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 from scipy.linalg import block_diag
 import sys, os, time
 import copy
-import importlib.resources
+#import importlib.resources
 
 __version__ = "1.0.0"
 
