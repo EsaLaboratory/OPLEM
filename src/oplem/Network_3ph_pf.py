@@ -1600,18 +1600,31 @@ class Network_3ph:
             Bbc_i = self.line_config_df[self.line_config_df['name']
                 ==line_info_i['config']]['Bbc'].values[0]*\
                 line_info_i['B_conv_factor']*line_info_i['length']
-            self.line_df = self.line_df._append({'busA':busA_i,'busB':busB_i,
-                            'Zaa':Zaa_i,'Zbb':Zbb_i,'Zcc':Zcc_i,'Zab':Zab_i,
-                            'Zac':Zac_i,'Zbc':Zbc_i,\
-                            'Baa':Baa_i,'Bbb':Bbb_i,'Bcc':Bcc_i,'Bab':Bab_i,
-                            'Bac':Bac_i,'Bbc':Bbc_i},ignore_index=True)
+            #self.line_df = self.line_df._append({'busA':busA_i,'busB':busB_i,
+            #                'Zaa':Zaa_i,'Zbb':Zbb_i,'Zcc':Zcc_i,'Zab':Zab_i,
+            #                'Zac':Zac_i,'Zbc':Zbc_i,\
+            #                'Baa':Baa_i,'Bbb':Bbb_i,'Bcc':Bcc_i,'Bab':Bab_i,
+            #                'Bac':Bac_i,'Bbc':Bbc_i},ignore_index=True)
+            self.line_df = pd.concat([self.line_df, pd.DataFrame({'busA': busA_i, 'busB': busB_i,
+                                                                  'Zaa': Zaa_i, 'Zbb': Zbb_i, 'Zcc': Zcc_i,
+                                                                  'Zab': Zab_i,
+                                                                  'Zac': Zac_i, 'Zbc': Zbc_i,
+                                                                  'Baa': Baa_i, 'Bbb': Bbb_i, 'Bcc': Bcc_i,
+                                                                  'Bab': Bab_i,
+                                                                  'Bac': Bac_i, 'Bbc': Bbc_i}, index=[0])], axis=0,
+                                     ignore_index=True)
         #Add the switch (low impedance) between buses 671 and 692
         Zswitch = 1e-6+0j
-        self.line_df = self.line_df._append({'busA':'671','busB':'692',
-                        'Zaa':Zswitch,'Zbb':Zswitch,'Zcc':Zswitch,'Zab':0,
-                        'Zac':0,'Zbc':0,\
-                        'Baa':0,'Bbb':0,'Bcc':0,'Bab':0,'Bac':0,'Bbc':0},
-                        ignore_index=True)
+        # self.line_df = self.line_df.append({'busA':'671','busB':'692',
+        #                 'Zaa':Zswitch,'Zbb':Zswitch,'Zcc':Zswitch,'Zab':0,
+        #                 'Zac':0,'Zbc':0,\
+        #                 'Baa':0,'Bbb':0,'Bcc':0,'Bab':0,'Bac':0,'Bbc':0},
+        #                 ignore_index=True)
+        self.line_df = pd.concat([self.line_df, pd.DataFrame({'busA': '671', 'busB': '692',
+                                                              'Zaa': Zswitch, 'Zbb': Zswitch, 'Zcc': Zswitch, 'Zab': 0,
+                                                              'Zac': 0, 'Zbc': 0,
+                                                              'Baa': 0, 'Bbb': 0, 'Bcc': 0, 'Bab': 0, 'Bac': 0,
+                                                              'Bbc': 0}, index=[0])], axis=0, ignore_index=True)
         #Add Transformer XFM-1 between buses 633 and 634  
         #Y-G to Y-G transformer - therefore diagonal Y matrix 
         #500kVA, 4.16kV/0.48kV, R=1.1%, X=2%
@@ -1628,35 +1641,48 @@ class Network_3ph:
         #Types: 'wye-g', 'wye', 'delta'
         transformer_columns =['busA','busB','typeA','typeB','Zseries','Zshunt']
         self.transformer_df = pd.DataFrame(columns = transformer_columns)
-        self.transformer_df = self.transformer_df._append({'busA':'633',
-                                                          'busB':'634',
-                                                          'typeA':'wye-g',
-                                                          'typeB':'wye-g',
-                                                        'Zseries':0.381+0.692j,
-                                                          'Zshunt':0},
-                                                            ignore_index=True) 
+        # self.transformer_df = self.transformer_df.append({'busA':'633',
+        #                                                   'busB':'634',
+        #                                                   'typeA':'wye-g',
+        #                                                   'typeB':'wye-g',
+        #                                                 'Zseries':0.381+0.692j,
+        #                                                   'Zshunt':0},
+        #                                                     ignore_index=True)
+        self.transformer_df = pd.concat([self.transformer_df, pd.DataFrame({'busA': '633', 'busB': '634',
+                                                                            'typeA': 'wye-g', 'typeB': 'wye-g',
+                                                                            'Zseries': 0.381 + 0.692j,
+                                                                            'Zshunt': 0}, index=[0])], axis=0,
+                                        ignore_index=True)
         
         capacitor_columns = ['name','number','bus','kVln','connect',
                              'Qa','Qb','Qc']
         self.capacitor_df = pd.DataFrame(columns = capacitor_columns)
-        self.capacitor_df = self.capacitor_df._append({'name':'cap2',
-                                                      'number':0,
-                                                      'bus':'675',
-                                                      'kVln':2.4,
-                                                      'connect':'Y',
-                                                      'Qa':200,
-                                                      'Qb':200,
-                                                      'Qc':200},
-                                                        ignore_index=True) 
-        self.capacitor_df = self.capacitor_df._append({'name':'cap2',
-                                                      'number':1,
-                                                      'bus':'611',
-                                                      'kVln':2.4,
-                                                      'connect':'Y',
-                                                      'Qa': 0,
-                                                      'Qb': 0,
-                                                      'Qc':100},
-                                                        ignore_index=True)
+        # self.capacitor_df = self.capacitor_df.append({'name': 'cap2',
+        #                                                'number': 0,
+        #                                                'bus': '675',
+        #                                                'kVln': 2.4,
+        #                                                'connect': 'Y',
+        #                                                'Qa': 200,
+        #                                                'Qb': 200,
+        #                                                'Qc': 200},
+        #                                               ignore_index=True)
+        self.capacitor_df = pd.concat([self.capacitor_df, pd.DataFrame({'name': 'cap2', 'number': 0, 'bus': '675',
+                                                                        'kVln': 2.4, 'connect': 'Y', 'Qa': 200,
+                                                                        'Qb': 200, 'Qc': 200}, index=[0])], axis=0,
+                                      ignore_index=True)
+        # self.capacitor_df = self.capacitor_df.append({'name': 'cap2',
+        #                                                'number': 1,
+        #                                                'bus': '611',
+        #                                                'kVln': 2.4,
+        #                                                'connect': 'Y',
+        #                                                'Qa': 0,
+        #                                                'Qb': 0,
+        #                                                'Qc': 100},
+        #                                               ignore_index=True)
+        self.capacitor_df = pd.concat([self.capacitor_df, pd.DataFrame({'name': 'cap2', 'number': 1, 'bus': '611',
+                                                                        'kVln': 2.4, 'connect': 'Y', 'Qa': 0,
+                                                                        'Qb': 0, 'Qc': 100}, index=[0])], axis=0,
+                                      ignore_index=True)
 
     def setup_network_eulv_reduced(self, updateYZ=True):
         #path = os.path.dirname(os.path.abspath(__file__))
@@ -1759,15 +1785,24 @@ class Network_3ph:
         line_columns = ['busA', 'busB', 'Zaa', 'Zbb', 'Zcc', 'Zab', 'Zac', 'Zbc', 'Baa', 'Bbb', 'Bcc', 'Bab', 'Bac',
                         'Bbc']
         self.line_df = pd.DataFrame(columns=line_columns)
-        self.line_df = self.line_df._append({'busA': 'sourcebus', 'busB': 'sourcebusz', \
-                                            'Zaa': 0.5743408230315273 + 1.7234619861939902j,
-                                            'Zbb': 0.5743408230315273 + 1.7234619861939902j,
-                                            'Zcc': 0.5743408230315273 + 1.7234619861939902j, \
-                                            'Zab': 0.5736068230292247 + 1.720524986189671j,
-                                            'Zac': 0.5736068230292249 + 1.7205249861896714j,
-                                            'Zbc': 0.5736068230292249 + 1.7205249861896714j, \
-                                            'Baa': 0j, 'Bbb': 0j, 'Bcc': 0j, 'Bab': 0j, 'Bac': 0j, 'Bbc': 0j},
-                                           ignore_index=True)
+        # self.line_df = self.line_df._append({'busA': 'sourcebus', 'busB': 'sourcebusz', \
+        #                                      'Zaa': 0.5743408230315273 + 1.7234619861939902j,
+        #                                      'Zbb': 0.5743408230315273 + 1.7234619861939902j,
+        #                                      'Zcc': 0.5743408230315273 + 1.7234619861939902j, \
+        #                                      'Zab': 0.5736068230292247 + 1.720524986189671j,
+        #                                      'Zac': 0.5736068230292249 + 1.7205249861896714j,
+        #                                      'Zbc': 0.5736068230292249 + 1.7205249861896714j, \
+        #                                      'Baa': 0j, 'Bbb': 0j, 'Bcc': 0j, 'Bab': 0j, 'Bac': 0j, 'Bbc': 0j},
+        #                                     ignore_index=True)
+        self.line_df = pd.concat([self.line_df, pd.DataFrame({'busA': 'sourcebus', 'busB': 'sourcebusz',
+                                                              'Zaa': 0.5743408230315273 + 1.7234619861939902j,
+                                                              'Zbb': 0.5743408230315273 + 1.7234619861939902j,
+                                                              'Zcc': 0.5743408230315273 + 1.7234619861939902j,
+                                                              'Zab': 0.5736068230292247 + 1.720524986189671j,
+                                                              'Zac': 0.5736068230292249 + 1.7205249861896714j,
+                                                              'Zbc': 0.5736068230292249 + 1.7205249861896714j,
+                                                              'Baa': 0j, 'Bbb': 0j, 'Bcc': 0j, 'Bab': 0j, 'Bac': 0j,
+                                                              'Bbc': 0j}, index=[0])], axis=0, ignore_index=True)
         for i in range(len(line_info_df)):
             line_info_i = line_info_df.iloc[i]
             Zaa_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Zaa'].values[0] * line_info_i[
@@ -1794,10 +1829,16 @@ class Network_3ph:
                 'B_conv_factor'] * line_info_i['length']
             Bbc_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Bbc'].values[0] * line_info_i[
                 'B_conv_factor'] * line_info_i['length']
-            self.line_df = self.line_df._append(
-                {'busA': line_info_df.iloc[i]['busA'], 'busB': line_info_df.iloc[i]['busB'], \
-                 'Zaa': Zaa_i, 'Zbb': Zbb_i, 'Zcc': Zcc_i, 'Zab': Zab_i, 'Zac': Zac_i, 'Zbc': Zbc_i, \
-                 'Baa': Baa_i, 'Bbb': Bbb_i, 'Bcc': Bcc_i, 'Bab': Bab_i, 'Bac': Bac_i, 'Bbc': Bbc_i}, ignore_index=True)
+            # self.line_df = self.line_df._append(
+            #     {'busA': line_info_df.iloc[i]['busA'], 'busB': line_info_df.iloc[i]['busB'],
+            #      'Zaa': Zaa_i, 'Zbb': Zbb_i, 'Zcc': Zcc_i, 'Zab': Zab_i, 'Zac': Zac_i, 'Zbc': Zbc_i,
+            #      'Baa': Baa_i, 'Bbb': Bbb_i, 'Bcc': Bcc_i, 'Bab': Bab_i, 'Bac': Bac_i, 'Bbc': Bbc_i}, ignore_index=True)
+            self.line_df = pd.concat([self.line_df, pd.DataFrame({'busA': line_info_df.iloc[i]['busA'],
+                                                                  'busB': line_info_df.iloc[i]['busB'],
+                                                                  'Zaa': Zaa_i, 'Zbb': Zbb_i, 'Zcc': Zcc_i,
+                                                                  'Zab': Zab_i, 'Zac': Zac_i, 'Zbc': Zbc_i,
+                                                                  'Baa': Baa_i, 'Bbb': Bbb_i, 'Bcc': Bcc_i,
+                                                                  'Bab': Bab_i, 'Bac': Bac_i, 'Bbc': Bbc_i},
         ##Add Transformer
         ##Y-G to Y-G transformer - therefore diagonal Y matrix (and not rank deficient)
         ##500kVA, 4.16kV/0.48kV, R=1.1%, X=2%
@@ -1807,9 +1848,14 @@ class Network_3ph:
         ##Types: 'wye-g', 'wye', 'delta'
         transformer_columns = ['busA', 'busB', 'typeA', 'typeB', 'Zseries', 'Zshunt']
         self.transformer_df = pd.DataFrame(columns=transformer_columns)
-        self.transformer_df = self.transformer_df._append(
-            {'busA': 'sourcebusz', 'busB': '1', 'typeA': 'delta', 'typeB': 'wye-g', 'Zseries': 0.00086528 + 0.0086528j,
-             'Zshunt': 0j}, ignore_index=True)
+        # self.transformer_df = self.transformer_df._append(
+        #     {'busA': 'sourcebusz', 'busB': '1', 'typeA': 'delta', 'typeB': 'wye-g', 'Zseries': 0.00086528 + 0.0086528j,
+        #      'Zshunt': 0j}, ignore_index=True)
+        self.transformer_df = pd.concat([self.transformer_df, pd.DataFrame({'busA': 'sourcebusz', 'busB': '1',
+                                                                            'typeA': 'delta', 'typeB': 'wye-g',
+                                                                            'Zseries': 0.00086528 + 0.0086528j,
+                                                                            'Zshunt': 0j}, index=[0])], axis=0,
+                                        ignore_index=True)
         ##e.g. can test other transformer combinations:
         ##self.transformer_df = self.transformer_df._append({'busA':'633','busB':'634','typeA':'wye','typeB':'wye','Zseries':0.381+0.692j,'Zshunt':0},ignore_index=True)
 
@@ -1989,38 +2035,65 @@ class Network_3ph:
                 'B_conv_factor'] * line_info_i['length']
             Bbc_i = line_config_df[line_config_df['name'] == line_info_i['config']]['Bbc'].values[0] * line_info_i[
                 'B_conv_factor'] * line_info_i['length']
-            self.line_df = self.line_df._append(
-                {'busA': line_info_df.iloc[i]['busA'], 'busB': line_info_df.iloc[i]['busB'], \
-                 'Zaa': Zaa_i, 'Zbb': Zbb_i, 'Zcc': Zcc_i, 'Zab': Zab_i, 'Zac': Zac_i, 'Zbc': Zbc_i, \
-                 'Baa': Baa_i, 'Bbb': Bbb_i, 'Bcc': Bcc_i, 'Bab': Bab_i, 'Bac': Bac_i, 'Bbc': Bbc_i}, ignore_index=True)
+            # self.line_df = self.line_df._append(
+            #     {'busA': line_info_df.iloc[i]['busA'], 'busB': line_info_df.iloc[i]['busB'], \
+            #      'Zaa': Zaa_i, 'Zbb': Zbb_i, 'Zcc': Zcc_i, 'Zab': Zab_i, 'Zac': Zac_i, 'Zbc': Zbc_i, \
+            #      'Baa': Baa_i, 'Bbb': Bbb_i, 'Bcc': Bcc_i, 'Bab': Bab_i, 'Bac': Bac_i, 'Bbc': Bbc_i}, ignore_index=True)
+            self.line_df = pd.concat([self.line_df, pd.DataFrame({'busA': line_info_df.iloc[i]['busA'],
+                                                                  'busB': line_info_df.iloc[i]['busB'], \
+                                                                  'Zaa': Zaa_i, 'Zbb': Zbb_i, 'Zcc': Zcc_i,
+                                                                  'Zab': Zab_i, 'Zac': Zac_i, 'Zbc': Zbc_i, \
+                                                                  'Baa': Baa_i, 'Bbb': Bbb_i, 'Bcc': Bcc_i,
+                                                                  'Bab': Bab_i, 'Bac': Bac_i, 'Bbc': Bbc_i},
+                                                                 index=[0])], axis=0, ignore_index=True)
 
         ## Add Switches that are closed. Note that, this is necessary
         ## since some buses are not connected by line but by switches
         Zswitch = 1e-6 + 0j
         for i in range(len(switch_data_closed)):
             switch_data_closed_i = switch_data_closed.iloc[i]
-            self.line_df = self.line_df._append({'busA': str(switch_data_closed_i['Node A']), 'busB': str(switch_data_closed_i['Node B']), \
-                                                'Zaa': Zswitch, 'Zbb': Zswitch, 'Zcc': Zswitch, 'Zab': 0, 'Zac': 0,
-                                                'Zbc': 0, \
-                                                'Baa': 0, 'Bbb': 0, 'Bcc': 0, 'Bab': 0, 'Bac': 0, 'Bbc': 0},
-                                               ignore_index=True)
-
+            # self.line_df = self.line_df._append(
+            #     {'busA': str(switch_data_closed_i['Node A']), 'busB': str(switch_data_closed_i['Node B']), \
+            #      'Zaa': Zswitch, 'Zbb': Zswitch, 'Zcc': Zswitch, 'Zab': 0, 'Zac': 0,
+            #      'Zbc': 0, \
+            #      'Baa': 0, 'Bbb': 0, 'Bcc': 0, 'Bab': 0, 'Bac': 0, 'Bbc': 0},
+            #     ignore_index=True)
+            self.line_df = pd.concat([self.line_df, pd.DataFrame({'busA': str(switch_data_closed_i['Node A']),
+                                                                  'busB': str(switch_data_closed_i['Node B']), \
+                                                                  'Zaa': Zswitch, 'Zbb': Zswitch, 'Zcc': Zswitch,
+                                                                  'Zab': 0, 'Zac': 0,
+                                                                  'Zbc': 0, \
+                                                                  'Baa': 0, 'Bbb': 0, 'Bcc': 0, 'Bab': 0,
+                                                                  'Bac': 0, 'Bbc': 0}, index=[0])], axis=0,
+                                        ignore_index=True)
         ##Add Transformer
         transformer_columns = ['busA', 'busB', 'typeA', 'typeB', 'Zseries', 'Zshunt']
         self.transformer_df = pd.DataFrame(columns=transformer_columns)
-        self.transformer_df = self.transformer_df._append(
-                                    {'busA': '61', 'busB': '610', 'typeA': 'delta', 'typeB': 'delta',
-                                     'Zseries': 1.465 + 3.138j, 'Zshunt': 0}, ignore_index=True)
+        # self.transformer_df = self.transformer_df._append(
+        #     {'busA': '61', 'busB': '610', 'typeA': 'delta', 'typeB': 'delta',
+        #      'Zseries': 1.465 + 3.138j, 'Zshunt': 0}, ignore_index=True)
+        self.transformer_df = pd.concat([self.transformer_df, pd.DataFrame({'busA': '61', 'busB': '610',
+                                                                            'typeA': 'delta', 'typeB': 'delta',
+                                                                            'Zseries': 1.465 + 3.138j,
+                                                                            'Zshunt': 0}, index=[0])], axis=0,
+                                        ignore_index=True)
 
         capacitor_data = pd.read_excel(file_location + 'cap data.xls', header=2).fillna(0)
         capacitor_data = capacitor_data[1:-1]
         capacitor_columns = ['name', 'number', 'bus', 'kVln', 'connect', 'Qa', 'Qb', 'Qc']
         self.capacitor_df = pd.DataFrame(columns=capacitor_columns)
         for i in range(1, len(capacitor_data)):
-            self.capacitor_df = self.capacitor_df._append(
-                {'name': 'cap2', 'number': i - 1, 'bus': str(capacitor_data['Node'][i]), 'kVln': 2.4, 'connect': 'Y',
-                 'Qa': capacitor_data['Ph-A'][i], 'Qb': capacitor_data['Ph-B'][i], 'Qc': capacitor_data['Ph-C'][i]},
-                ignore_index=True)
+            # self.capacitor_df = self.capacitor_df._append(
+            #     {'name': 'cap2', 'number': i - 1, 'bus': str(capacitor_data['Node'][i]), 'kVln': 2.4, 'connect': 'Y',
+            #      'Qa': capacitor_data['Ph-A'][i], 'Qb': capacitor_data['Ph-B'][i], 'Qc': capacitor_data['Ph-C'][i]},
+            #     ignore_index=True)
+            self.capacitor_df = pd.concat([self.capacitor_df, pd.DataFrame({'name': 'cap2', 'number': i - 1,
+                                                                            'bus': str(capacitor_data['Node'][i]),
+                                                                            'kVln': 2.4, 'connect': 'Y',
+                                                                            'Qa': capacitor_data['Ph-A'][i],
+                                                                            'Qb': capacitor_data['Ph-B'][i],
+                                                                            'Qc': capacitor_data['Ph-C'][i]},
+                                                                           index=[0])], axis=0, ignore_index=True)
 
         if updateYZ:
             # print('Update Y and Z...\n',time.process_time())
