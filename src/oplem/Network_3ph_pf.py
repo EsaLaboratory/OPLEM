@@ -1698,6 +1698,7 @@ class Network_3ph:
         self.N_phases = 3
         ##Create buses dataframe
         self.Vslack_ph = 240
+        self.Vslack = self.Vslack_ph*np.sqrt(3)
         bus_columns = ['name', 'number', 'load_type', 'connect', 'Pa', 'Pb', 'Pc', 'Qa', 'Qb', 'Qc']
         bus_index = range(self.N_buses)
         self.bus_df = pd.DataFrame(index=bus_index, columns=bus_columns)
@@ -1707,6 +1708,8 @@ class Network_3ph:
                                    'Pa': buses_csv['Pa'][i], 'Pb': buses_csv['Pb'][i], 'Pc': buses_csv['Pc'][i],
                                    'Qa': buses_csv['Qa'][i], 'Qb': buses_csv['Qb'][i], 'Qc': buses_csv['Qc'][i]}
 
+        #no capacitors
+        self.capacitor_df = pd.DataFrame(columns=self.capacitor_df.columns) 
         # self.bus_df.iloc[0]= {'name':'650','number':0,  'v_base': self.Vslack_ph, 'load_type':'S', 'connect':'Y','Pa':  0,'Pb':  0,'Pc':  0,'Qa':  0,'Qb':  0,'Qc':  0}
         ##Create line configuration data frame
         line_config_col = ['name', 'Zaa', 'Zbb', 'Zcc', 'Zab', 'Zac', 'Zbc', 'Baa', 'Bbb', 'Bcc', 'Bab', 'Bac', 'Bbc']
@@ -1839,6 +1842,8 @@ class Network_3ph:
                                                                   'Zab': Zab_i, 'Zac': Zac_i, 'Zbc': Zbc_i,
                                                                   'Baa': Baa_i, 'Bbb': Bbb_i, 'Bcc': Bcc_i,
                                                                   'Bab': Bab_i, 'Bac': Bac_i, 'Bbc': Bbc_i},
+        self.line_info_df = line_info_df
+        self.line_config_df = line_config_df
         ##Add Transformer
         ##Y-G to Y-G transformer - therefore diagonal Y matrix (and not rank deficient)
         ##500kVA, 4.16kV/0.48kV, R=1.1%, X=2%
