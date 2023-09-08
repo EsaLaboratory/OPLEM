@@ -972,6 +972,8 @@ class Network_3ph:
             #update the bus voltages
             v[k,:] = np.matmul(self.Z,i_PQ[k-1,:]) + v0
             dv[k] = np.sum(np.abs(v[k,:]-v[k-1,:])) 
+            if k == self.N_iter - 1 and dv[k] > 1e-3:
+                warnings.warn(f'Warning: Voltage change at the last iteration is {dv[k]}', RuntimeWarning)
                 #change in |V| sum during the iteration
             #update current injections
             for phase_i in range(self.Y.shape[0]):    
