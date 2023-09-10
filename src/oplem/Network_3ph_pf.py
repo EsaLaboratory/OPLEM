@@ -453,257 +453,6 @@ class Network_3ph:
         self.Ss /= 1e3
 
 
-    def get_parameters(self, assets_nd, assets_flex, t_ems, t0):
-        """
-        Get linear parameters for central optimisation with network constraints
-
-        Parameters
-        ------------
-        assets_nd : list
-            list of nondispatchable assets
-        assets_flex : list
-            list of flexible assets (storage and building)
-        t_ems : int
-            current time slot of optimisation
-        t0 : int t0<=t_ems
-            starting point of the optimisation
-
-        Returns
-        ----------
-        A_Pslack_flex : numpy.ndarray
-            submatrix(G) for which the rows corespond to buses connected to flexible loads
-        A_Pslack_nd : numpy.ndarray
-            submatrix(G) for which the rows corespond to buses connected to nondispatchable loads
-        b_Pslack : float
-            g_0
-
-        A_vlim_flex : numpy.ndarray
-            submatrix(K) for which the rows corespond to buses connected to flexible loads
-        A_vlim_nd : numpy.ndarray
-            submatrix(K) for which the rows corespond to buses connected to nondispatchable loads
-        b_vlim : float
-            k_0
-        v_abs_min_vec : numpy.ndarray
-            vector of maximum voltage limit
-        v_abs_max_vec : numpy.ndarray
-            vector of minimum voltage limit
-
-        A_lines_flex : list
-            list of submatrices(J) over lines connected to flexible loads
-        A_lines_nd : list
-            list of submatrices(J) over lines connected to nondispatchable loads
-        
-        A_Pslack_wye_flex : numpy.ndarray
-            submatrix(G) for which the rows correspond to buses connected to flexible loads, type='Y'
-        A_Pslack_del_flex : numpy.ndarray
-            submatrix(G) for which the rows correspond to buses connected to flexible loads, type='Delta'
-        A_vlim_wye_flex : numpy.ndarray
-            submatrix(K) for which the rows correspond to buses connected to flexible loads, type='Y'
-        A_vlim_del_flex : numpy.ndarray
-            submatrix(K) for which the rows correspond to buses connected to flexible loads, type='Delta'
-        A_line_wye_flex : list
-            list of submatrices(J) over lines connected to flexible loads, type='Y' 
-        A_line_del_flex : list
-            list of submatrices(J) over lines connected to flexible loads, type='Delta'
-        
-        A_Pslack_wye_nd : numpy.ndarray
-            submatrix(G) for which the rows correspond to buses connected to nondispatchable loads, type='Y'
-        A_Pslack_del_nd : numpy.ndarray
-            submatrix(G) for which the rows correspond to buses connected to nondispatchable loads, type='Delta'
-        A_vlim_wye_nd : numpy.ndarray
-            submatrix(K) for which the rows correspond to buses connected to nondispatchable loads, type='Y' 
-        A_vlim_del_nd : numpy.ndarray
-            submatrix(K) for which the rows correspond to buses connected to nondispatchable loads, type='Delta'
-        A_line_wye_nd : list
-            list of submatrices(J) over lines connected to nondispatchable loads, type='Y'
-        A_line_del_nd : list
-            list of submatrices(J) over lines connected to nondispatchable loads, type='Delta'
-
-        """
-
-        if len(assets_nd):
-            T = assets_nd[0].T
-            dt = assets_nd[0].dt
-            T_ems = assets_nd[0].T_ems
-            dt_ems = assets_nd[0].dt_ems
-        elif len(assets_flex):
-            T = assets_flex[0].T
-            dt = assets_flex[0].dt
-            T_ems = assets_flex[0].T_ems
-            dt_ems = assets_flex[0].dt_ems
-
-        #Set up Matrix linking nondispatchable assets to their bus and phase
-        G_wye_nondispatch,  G_del_nondispatch = self.get_Gs(assets_nd) #nondispatch
-        #Set up Matrix linking energy storage assets to their bus and phase
-        G_wye_ES, G_del_ES = self.get_Gs(assets_flex)
-        #PQ Gs
-        G_wye_nondispatch_PQ = np.concatenate((G_wye_nondispatch, G_wye_nondispatch),axis=0)
-        G_del_nondispatch_PQ = np.concatenate((G_del_nondispatch, G_del_nondispatch),axis=0)
-        G_wye_ES_PQ = np.concatenate((G_wye_ES,G_wye_ES),axis=0)
-        G_del_ES_PQ = np.concatenate((G_del_ES,G_del_ES),axis=0)
-
-        P_lin_buses = np.zeros([self.N_buses,self.N_phases])
-        Q_lin_buses = np.zeros([self.N_buses,self.N_phases])
-        
-        #Setup linear power flow model:
-        for i in range(len(assets_nd)):
-            bus_id = assets_nd[i].bus_id
-            phases_i = assets_nd[i].phases
-            for ph_i in np.nditer(phases_i):
-                bus_ph_index = 3*(bus_id-1) + ph_i
-                if t_ems == t0:
-                    P_lin_buses[bus_id,ph_i] +=\
-                    (G_wye_nondispatch[bus_ph_index,i]+\
-                     G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Pnet_ems[t_ems] #P_demand[t_ems-t0, i]
-                    Q_lin_buses[bus_id,ph_i] +=\
-                    (G_wye_nondispatch[bus_ph_index,i]+\
-                     G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Qnet_ems[t_ems] #Q_demand[t_ems-t0, i]
-                else:
-                    P_lin_buses[bus_id,ph_i] +=\
-                    (G_wye_nondispatch[bus_ph_index,i]+\
-                     G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Pnet_ems_pred[t_ems] #P_demand[t_ems-t0, i]
-                    Q_lin_buses[bus_id,ph_i] +=\
-                    (G_wye_nondispatch[bus_ph_index,i]+\
-                     G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Qnet_ems_pred[t_ems]
-
-        #set up a copy of the network for MPC interval t
-        network_t = copy.deepcopy(self)#.network)
-        network_t.clear_loads()  #self.clear
-        for bus_id in range(self.N_buses):
-            for ph_i in range(self.N_phases):
-                Pph_t = P_lin_buses[bus_id,ph_i]
-                Qph_t = Q_lin_buses[bus_id,ph_i]
-                #add P,Q loads to the network copy
-                network_t.set_load(bus_id,ph_i,Pph_t,Qph_t) #self.
-
-        network_t.zbus_pf()
-        network_t.linear_model_setup(network_t.v_net_res, network_t.S_PQloads_wye_res, network_t.S_PQloads_del_res)
-        # note that phases need to be 120degrees out for good results
-        network_t.linear_pf()
-
-
-        # Note that linear power flow matricies are in units of W (not kW)
-        PQ0_wye = np.concatenate((np.real(network_t.S_PQloads_wye_res),\
-                                  np.imag(network_t.S_PQloads_wye_res)))\
-                                  *1e3
-        PQ0_del = np.concatenate((np.real(network_t.S_PQloads_del_res),\
-                                  np.imag(network_t.S_PQloads_del_res)))\
-                                  *1e3
-        A_Pslack_flex = (np.matmul\
-                    (np.real(np.matmul\
-                             (network_t.vs.T,\
-                              np.matmul(np.conj(network_t.Ysn),\
-                                        np.conj(network_t.M_wye)))),\
-                                  G_wye_ES_PQ)\
-                     + np.matmul\
-                     (np.real(np.matmul\
-                              (network_t.vs.T,\
-                               np.matmul(np.conj(network_t.Ysn),\
-                                         np.conj(network_t.M_del)))),\
-                                  G_del_ES_PQ))
-
-        A_Pslack_nd = (np.matmul\
-                    (np.real(np.matmul\
-                             (network_t.vs.T,\
-                              np.matmul(np.conj(network_t.Ysn),\
-                                        np.conj(network_t.M_wye)))),\
-                                  G_wye_nondispatch_PQ)\
-                     + np.matmul\
-                     (np.real(np.matmul\
-                              (network_t.vs.T,\
-                               np.matmul(np.conj(network_t.Ysn),\
-                                         np.conj(network_t.M_del)))),\
-                                  G_del_nondispatch_PQ))
-
-        b_Pslack =  np.real(np.matmul\
-                            (network_t.vs.T,\
-                             np.matmul(np.conj\
-                                       (network_t.Ysn),\
-                                       np.matmul(np.conj\
-                                                 (network_t.M_wye),\
-                                                 PQ0_wye))))\
-                    +np.real(np.matmul\
-                             (network_t.vs.T,\
-                              np.matmul(np.conj\
-                                        (network_t.Ysn),\
-                                        np.matmul(np.conj\
-                                                  (network_t.M_del),
-                                                  PQ0_del))))\
-                    +np.real(np.matmul\
-                             (network_t.vs.T,\
-                              (np.matmul(np.conj\
-                                         (network_t.Yss),\
-                                         np.conj(network_t.vs))\
-                             + np.matmul(np.conj\
-                                         (network_t.Ysn),\
-                                         np.conj(network_t.M0)))))
-
-        
-        # Voltage magnitude constraints
-        A_vlim_flex = np.matmul(network_t.K_wye,G_wye_ES_PQ)\
-                + np.matmul(network_t.K_del,G_del_ES_PQ)
-        A_vlim_nd = np.matmul(network_t.K_wye,G_wye_nondispatch_PQ)\
-                + np.matmul(network_t.K_del,G_del_nondispatch_PQ)
-        b_vlim = network_t.v_lin_abs_res
-
-        #get max/min bus voltages, removing slack and reshaping in a column
-        v_abs_max_vec = network_t.v_abs_max[1:,:].reshape(-1,1)
-        v_abs_min_vec = network_t.v_abs_min[1:,:].reshape(-1,1)
-
-        # current 
-        A_lines_flex, A_line_wye_flex, A_line_del_flex, A_lines_nd, A_line_wye_nd, A_line_del_nd  = [], [], [], [], [], []
-        for line_ij in range(self.N_lines):
-            #if line_ij not in i_unconstrained_lines:
-
-                iabs_max_line_ij = network_t.i_abs_max[line_ij,:] #3 phases
-                # maximum current magnitude constraint
-                A_line_flex = np.matmul(network_t.Jabs_dPQwye_list[line_ij],\
-                                   G_wye_ES_PQ)\
-                                   + np.matmul(network_t.\
-                                               Jabs_dPQdel_list[line_ij],\
-                                               G_del_ES_PQ)
-                A_lines_flex.append(A_line_flex)
-
-                A_line_wye_flex.append(np.matmul(network_t.Jabs_dPQwye_list[line_ij],G_wye_ES_PQ))
-                A_line_del_flex.append(np.matmul(network_t.Jabs_dPQdel_list[line_ij],G_del_ES_PQ))
-
-                A_line_nd = np.matmul(network_t.Jabs_dPQwye_list[line_ij],\
-                                   G_wye_nondispatch_PQ)\
-                                   + np.matmul(network_t.\
-                                               Jabs_dPQdel_list[line_ij],\
-                                               G_del_nondispatch_PQ)
-                A_lines_nd.append(A_line_nd)
-                A_line_wye_nd.append(np.matmul(network_t.Jabs_dPQwye_list[line_ij],G_wye_nondispatch_PQ))
-                A_line_del_nd.append(np.matmul(network_t.Jabs_dPQdel_list[line_ij],G_del_nondispatch_PQ))
-        
-        A_Pslack_wye_flex = np.matmul(np.real(np.matmul(network_t.vs.T,\
-                                                              np.matmul(np.conj(network_t.Ysn),\
-                                                              np.conj(network_t.M_wye)))),G_wye_ES_PQ)
-        A_Pslack_del_flex = np.matmul(np.real(np.matmul (network_t.vs.T,\
-                                                                          np.matmul(np.conj(network_t.Ysn),\
-                                                                          np.conj(network_t.M_del)))), G_del_ES_PQ)
-        
-        A_vlim_wye_flex = np.matmul(network_t.K_wye,G_wye_ES_PQ)
-        A_vlim_del_flex = np.matmul(network_t.K_del,G_del_ES_PQ)
-        
-        A_Pslack_wye_nd = np.matmul(np.real(np.matmul(network_t.vs.T,\
-                                                              np.matmul(np.conj(network_t.Ysn),\
-                                                              np.conj(network_t.M_wye)))),G_wye_nondispatch_PQ)
-        A_Pslack_del_nd = np.matmul(np.real(np.matmul (network_t.vs.T,\
-                                                                          np.matmul(np.conj(network_t.Ysn),\
-                                                                          np.conj(network_t.M_del)))), G_del_nondispatch_PQ)
-        
-        A_vlim_wye_nd = np.matmul(network_t.K_wye,G_wye_nondispatch_PQ)
-        A_vlim_del_nd = np.matmul(network_t.K_del,G_del_nondispatch_PQ)
-        
-        
-        return A_Pslack_flex, A_Pslack_nd, b_Pslack, A_vlim_flex, A_vlim_nd, b_vlim, v_abs_min_vec, v_abs_max_vec, A_lines_flex, A_lines_nd,\
-               A_Pslack_wye_flex, A_Pslack_del_flex, A_vlim_wye_flex, A_vlim_del_flex, A_line_wye_flex, A_line_del_flex, \
-               A_Pslack_wye_nd, A_Pslack_del_nd, A_vlim_wye_nd, A_vlim_del_nd, A_line_wye_nd, A_line_del_nd
-        
-        #return A_Pslack, b_Pslack, 0, 0, 0, 0, 0, A_Pslack_wye, A_Pslack_del, 0, 0, 0, 0
-
-        
     def get_Gs(self, assets):
         """
         Set up matrices G_wye and G_del linking a group of assets to their bus and phase
@@ -716,82 +465,98 @@ class Network_3ph:
         Returns
         -----------
         G_wye : numpy.ndarray (no unit)
-            size (3*(N_buses-1),nbr of assets)
+            size (3*(N_buses-1),nbr of connected buses)
         G_del : numpy.ndarray (no unit)
-            size (3*(N_buses-1),nbr of assets)
+            size (3*(N_buses-1),nbr of connected buses)
 
         """
 
         N_buses = self.N_buses
         N_phases = self.N_phases
-        G_wye = np.zeros([3*(N_buses-1),len(assets)])
-        G_del = np.zeros([3*(N_buses-1),len(assets)])
+
+        buses = []
+        for asset in assets:
+            buses.append(asset.bus_id)
+        buses = list(set(buses))
+
+        G_wye = np.zeros([3*(N_buses-1),len(buses)])
+        G_del = np.zeros([3*(N_buses-1),len(buses)])
         for i in range(len(assets)):
             asset_N_phases = assets[i].phases.size
             bus_id = assets[i].bus_id
+            b_idx = buses.index(bus_id)
             # check if Wye connected
             wye_flag = self.bus_df[self.bus_df['number']==\
                                            bus_id]['connect'].values[0]=='Y'
-            for ph in np.nditer(assets[i].phases):
+            for ph in assets[i].phases: #np.nditer(assets[i].phases):
                 bus_ph_index = 3*(bus_id-1) + ph
                 if wye_flag is True:
-                    G_wye[bus_ph_index,i] = 1/asset_N_phases
+                    G_wye[bus_ph_index,b_idx] = 1/asset_N_phases
                 else:
-                    G_del[bus_ph_index,i] = 1/asset_N_phases
+                    G_del[bus_ph_index,b_idx] = 1/asset_N_phases
         return G_wye, G_del
 
-    def get_linear_parameters(self, assets_nd, t):
+    def get_linear_parameters(self, assets, t):
         """
         Get linear parameters for linear optimisation
 
         Parameters
         -----------
-        assets_nd : list
+        assets : list
             list of the non_dispatchable assets in the network
         t : int
-            first time slot of computation
+            time
 
         Returns
         --------
-        A_Pslack_nd : numpy.ndarray
+        A_Pslack_nd : 2d array
             submatrix(G) for which the rows corespond to buses connected to nondispatchable loads
         b_Pslack : float
             g_0
-        A_vlim_nd : numpy.ndarray
+        A_vlim_nd : 2d array
             submatrix(K) for which the rows corespond to buses connected to nondispatchable loads
         b_vlim : float
             k_0
-        v_abs_min_vec : numpy.ndarray
+        v_abs_min_vec :
+        v_abs_max_vec : 1d array
             vector of minimum voltage limit
-        v_abs_max_vec : numpy.ndarray
-            vector of maximum voltage limit
         A_lines : list
             list of submatrices(J) over lines connected to nondispatchable loads
         i_lim : float
             j0
-        i_abs_max :  numpy.array
+        i_abs_max :  1d array
             vector of maximum thermal limit
         
         """
 
         P_lin_buses = np.zeros([self.N_buses,self.N_phases])
         Q_lin_buses = np.zeros([self.N_buses,self.N_phases])    
-        G_wye_nondispatch,  G_del_nondispatch = self.get_Gs(assets_nd)
-        G_wye_nondispatch_PQ = np.concatenate((G_wye_nondispatch, G_wye_nondispatch),axis=0)
-        G_del_nondispatch_PQ = np.concatenate((G_del_nondispatch, G_del_nondispatch),axis=0)
+        G_wye,  G_del = self.get_Gs(assets)
+        G_wye_PQ = block_diag(G_wye, G_wye) #np.concatenate((G_wye, G_wye),axis=0)
+        G_del_PQ = block_diag(G_del, G_del) #np.concatenate((G_del, G_del),axis=0)
+
+        buses = []
+        for asset in assets:
+            buses.append(asset.bus_id)
+        buses = list(set(buses))
 
         #Setup linear power flow model:
-        for i in range(len(assets_nd)):
-            bus_id = assets_nd[i].bus_id
-            phases_i = assets_nd[i].phases
-            for ph_i in np.nditer(phases_i):
-                bus_ph_index = 3*(bus_id-1) + ph_i
-                P_lin_buses[bus_id,ph_i] +=\
-                (G_wye_nondispatch[bus_ph_index,i]+\
-                 G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Pnet_ems[t]
-                Q_lin_buses[bus_id,ph_i] +=\
-                (G_wye_nondispatch[bus_ph_index,i]+\
-                 G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Qnet_ems[t]
+        for i in range(len(assets)):
+            if  assets[i].type =='ND' and assets[i].LoG == 'load':
+                bus_id = assets[i].bus_id
+                phases_i = assets[i].phases
+                b_idx =buses.index(bus_id)
+                ## difference from EnergySystem method: in ES Gwye/del[., i] with i is the index of the asset in the list
+                ## of ND assets, having the strong assumption that each bus has a connected non-dispach load
+                ## here, Gwye/del[., b_idx] with b_idx is the position of the asset bus par rapport all connected buses
+                for ph_i in phases_i: #np.nditer(phases_i):
+                    bus_ph_index = 3*(bus_id-1) + ph_i
+                    P_lin_buses[bus_id,ph_i] +=\
+                    (G_wye[bus_ph_index,b_idx]+\
+                     G_del[bus_ph_index,b_idx])*assets[i].Pnet_ems[t]
+                    Q_lin_buses[bus_id,ph_i] +=\
+                    (G_wye[bus_ph_index,b_idx]+\
+                     G_del[bus_ph_index,b_idx])*assets[i].Qnet_ems[t]
 
         network_t = copy.deepcopy(self)#.network)
         network_t.clear_loads()  #self.clear
@@ -804,10 +569,8 @@ class Network_3ph:
 
         network_t.zbus_pf()
         network_t.linear_model_setup(network_t.v_net_res, network_t.S_PQloads_wye_res, network_t.S_PQloads_del_res)
-        # note that phases need to be 120degrees out for good results
         network_t.linear_pf()
-
-
+        # note that phases need to be 120degrees out for good results
         # Note that linear power flow matricies are in units of W (not kW)
 
         PQ0_wye = np.concatenate((np.real(network_t.S_PQloads_wye_res),\
@@ -816,18 +579,18 @@ class Network_3ph:
         PQ0_del = np.concatenate((np.real(network_t.S_PQloads_del_res),\
                                   np.imag(network_t.S_PQloads_del_res)))\
                                   *1e3
-        A_Pslack_nd = (np.matmul\
+        A_Pslack = (np.matmul\
                     (np.real(np.matmul\
                              (network_t.vs.T,\
                               np.matmul(np.conj(network_t.Ysn),\
                                         np.conj(network_t.M_wye)))),\
-                                  G_wye_nondispatch_PQ)\
+                                  G_wye_PQ)\
                      + np.matmul\
                      (np.real(np.matmul\
                               (network_t.vs.T,\
                                np.matmul(np.conj(network_t.Ysn),\
                                          np.conj(network_t.M_del)))),\
-                                  G_del_nondispatch_PQ))
+                                  G_del_PQ))
 
         b_Pslack =  np.real(np.matmul\
                             (network_t.vs.T,\
@@ -853,36 +616,37 @@ class Network_3ph:
                                          np.conj(network_t.M0)))))
         
         # Voltage magnitude constraints
-        A_vlim_nd = np.matmul(network_t.K_wye,G_wye_nondispatch_PQ)\
-                + np.matmul(network_t.K_del,G_del_nondispatch_PQ)
-        b_vlim = network_t.v_lin_abs_res
+        A_vlim = np.matmul(network_t.K_wye,G_wye_PQ)\
+                + np.matmul(network_t.K_del,G_del_PQ)
+        b_vlim = network_t.v_lin_abs_res #network_t.K0 #
 
         #get max/min bus voltages, removing slack and reshaping in a column
         v_abs_max_vec = network_t.v_abs_max[1:,:].reshape(-1,1)
         v_abs_min_vec = network_t.v_abs_min[1:,:].reshape(-1,1)
 
-        A_lines = np.empty((self.N_phases, len(assets_nd)))
+        A_lines = np.empty((self.N_phases, G_wye_PQ.shape[1]))  ####changed from G_wye.shape to G_wye_PQ.shape
         i_abs_max = []
         i_lim = []
         for line_ij in range(self.N_lines):
-                #if line_ij not in i_unconstrained_lines:
-                iabs_max_line_ij = network_t.i_abs_max[line_ij,:] #3 phases
-                #concatenate
-                i_abs_max.append(iabs_max_line_ij)
+            #if line_ij not in i_unconstrained_lines:
+            iabs_max_line_ij = network_t.i_abs_max[line_ij,:] #3 phases
+            #concatenate
+            i_abs_max.append(iabs_max_line_ij)
 
-                i_lim.append(network_t.Jabs_I0_list[line_ij])
+            i_lim.append(network_t.Jabs_I0_list[line_ij])
 
-                # maximum current magnitude constraint
-                A_line = np.matmul(network_t.Jabs_dPQwye_list[line_ij],\
-                                   G_wye_nondispatch_PQ)\
-                                   + np.matmul(network_t.\
-                                               Jabs_dPQdel_list[line_ij],\
-                                               G_del_nondispatch_PQ)
-                #concatenate in rows   Aline (N_phases, N_loads) and we have 1Aline per ij line
-                A_lines = np.concatenate((A_lines, A_line), axis=0)                  
+            # maximum current magnitude constraint
+            A_line = np.matmul(network_t.Jabs_dPQwye_list[line_ij],\
+                               G_wye_PQ)\
+                               + np.matmul(network_t.\
+                                           Jabs_dPQdel_list[line_ij],\
+                                           G_del_PQ)
+            #concatenate in rows   Aline (N_phases, N_loads) and we have 1Aline per ij line
+            A_lines = np.concatenate((A_lines, A_line), axis=0)  
 
-        return A_Pslack_nd, b_Pslack, A_vlim_nd, b_vlim, v_abs_min_vec, v_abs_max_vec, A_lines, i_lim, np.array(i_abs_max)
-
+                                                                                      #(3Nl, N_loads)              
+        return A_Pslack, b_Pslack, A_vlim, b_vlim, v_abs_min_vec, v_abs_max_vec, A_lines, i_lim, np.array(i_abs_max)
+        
     def zbus_pf(self):
         """
         Solves the nonlinear power flow problem using the Z-bus method 
