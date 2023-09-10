@@ -144,37 +144,43 @@ class Participant:
 
         	"""
 
+		initial_A, initial_b = [], []
+
 		list_b = [np.empty(0)]*len(assets) #self.assets_flex
 		#initialise Aunique as A of asset 0
 		A0, b0 = assets[0].polytope(t0) #self.assets_flex
+		initial_A.append(A0)
+		initial_b.append(b0)
 		Aunique = A0
-		list_b[0] = b0
-		
-		#### return the Aunique that has the aggregated unique rows, compute at the same time corresponding b for asset0
-		for a, asset in enumerate(assets[1:]): #self.assets_flex[1:]
-			#print('Start of the aggregated A, b calculation ...')
-			A, b = asset.polytope(t0)
-			for index in range(A.shape[0]):
-				if not (np.any(np.all(A[index] == Aunique, axis=1))):
-					b_new = self._find_b(A0, b0, A[index])
-					Aunique = np.concatenate((Aunique, np.expand_dims(A[index], axis=0)), axis=0)
-					#b0  = np.append(b0, b_new)	
-					list_b[0] = np.append(list_b[0], b_new) #.append(b_new)	
 
-		#################### compute new b corresponding to Aunique for the other assets #######################################
-		for a, asset in enumerate(assets[1:]): #self.assets_flex[1:]
-			A, b = asset.polytope(t0)  
-			for index in range(Aunique.shape[0]):
+		#we know As have 6*(T-t0) rows with the first 4*(T-t0) are similar, Horizon=T-t0
+		Horizon = int(A0.shape[0]/6)
+		list_b[0] = b0[:4*Horizon]
+		
+		#### return the Aunique that has the aggregated unique rows,	
+		for a, asset in enumerate(assets[1:]):
+			A, b = asset.polytope(t0)
+			initial_A.append(A)
+			initial_b.append(b)
+			Aunique = np.append(Aunique, A[4*Horizon:, :], axis=0)
+			#all the first 4*(T-t0) elements of b won't change
+			list_b[a+1] = np.append(list_b[a+1], b[:4*Horizon])
+		Aunique = np.unique(Aunique, axis=0)
+
+		# compute corresponding b for assets
+		for a, asset in enumerate(assets):
+			#A, b = asset.polytope(t0) #keep it or store A,b from line 216?
+			A=initial_A[a]
+			b=initial_b[a]
+			for index in range(4*Horizon, Aunique.shape[0]):
 				if (np.any(np.all(Aunique[index] == A, axis=1))): 
 					#find index in A that corresponds to Aunique[index]
 					i = np.where(np.all(Aunique[index] == A,axis=1))[0][0]
-					list_b[a+1] = np.append(list_b[a+1], b[i])
+					list_b[a] = np.append(list_b[a], b[i])
 
 				else:
 					b_new = self._find_b(A, b, Aunique[index])
-					#A = np.concatenate((A, np.expand_dims(Aunique[index], axis=0)), axis=0)
-					#b = np.append(b, b_new)
-					list_b[a+1]  = np.append(list_b[a+1], b_new)
+					list_b[a]  = np.append(list_b[a], b_new)
 
 		return Aunique, np.sum(np.asarray(list_b), axis=0)
 
