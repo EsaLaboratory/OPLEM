@@ -112,7 +112,7 @@ class Participant:
 		self.Pnet_pred_ems = self.Pload_pred_ems + self.Pgen_pred_ems
 		self.Qnet_pred_ems = self.Qload_pred_ems + self.Qgen_pred_ems
 		
-		self.c1_deg = np.mean(np.asarray(self.c1_deg))
+		self.c1_deg = np.mean(np.asarray(self.c1_deg)) if self.c1_deg else 0
 
 		self.assets_flex, self.assets_nd = [], []
 		for asset in self.assets:
