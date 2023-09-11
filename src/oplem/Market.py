@@ -823,8 +823,8 @@ class P2P_market(Market):
 				elif par_pref_output_final[i]['q_sup_buy'][t]:
 					list_clearing.append([self.t_ahead_0+t, 0, self.participants[i].p_id, par_pref_output_final[i]['q_sup_buy'][t], self.price_imp[t+self.t_ahead_0, self.participants[i].p_id-1]])
 
-			print('q sell:', par_pref_output_final[i]['q_sup_sell'])
-			print('q buy:', par_pref_output_final[i]['q_sup_buy'])
+			#print('q sell:', par_pref_output_final[i]['q_sup_sell'])
+			#print('q buy:', par_pref_output_final[i]['q_sup_buy'])
 			###### update resources
 			print('*********************************************\n*\n*\n*')
 			print('* Updating resources... ')
