@@ -28,7 +28,6 @@ setup(
         'pandas',
         'PICOS',
         'scikit-learn',
-        'scipy',
-        'oplem'
+        'scipy'
     ],
 )
