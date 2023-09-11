@@ -14,7 +14,7 @@ setup(
     author_email='cessayeh@ed.ac.uk',
     license='MIT',
     packages=['oplem'], #same as name
-    package_dir={"": "src"},
+    package_dir={"": "src/oplem/Data"},
     include_package_data=True,
     install_requires=[
         'cvxopt',
