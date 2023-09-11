@@ -558,25 +558,25 @@ class Network_3ph:
                         bus_ph_index = 3*(bus_id-1) + ph_i
                         if t == t0:
                             P_lin_buses[bus_id,ph_i] +=\
-                            (ID_wye[bus_ph_index,b_idx]+\
-                             ID_del[bus_ph_index,b_idx])*assets[i].Pnet_ems[t] 
+                            (G_wye[bus_ph_index,b_idx]+\
+                             G_del[bus_ph_index,b_idx])*assets[i].Pnet_ems[t] 
                             Q_lin_buses[bus_id,ph_i] +=\
-                            (ID_wye[bus_ph_index,b_idx]+\
-                             ID_del[bus_ph_index,b_idx])*assets[i].Qnet_ems[t] 
+                            (G_wye[bus_ph_index,b_idx]+\
+                             G_del[bus_ph_index,b_idx])*assets[i].Qnet_ems[t] 
                         else:
                             P_lin_buses[bus_id,ph_i] +=\
-                            (ID_wye[bus_ph_index,b_idx]+\
-                             ID_del[bus_ph_index,b_idx])*assets[i].Pnet_ems_pred[t] 
+                            (G_wye[bus_ph_index,b_idx]+\
+                             G_del[bus_ph_index,b_idx])*assets[i].Pnet_ems_pred[t] 
                             Q_lin_buses[bus_id,ph_i] +=\
-                            (ID_wye[bus_ph_index,b_idx]+\
-                             ID_del[bus_ph_index,b_idx])*assets[i].Qnet_ems_pred[t]
+                            (G_wye[bus_ph_index,b_idx]+\
+                             G_del[bus_ph_index,b_idx])*assets[i].Qnet_ems_pred[t]
                         """
                         P_lin_buses[bus_id,ph_i] +=\
-                        (ID_wye[bus_ph_index,b_idx]+\
-                         ID_del[bus_ph_index,b_idx])*assets[i].Pnet_ems[t]
+                        (G_wye[bus_ph_index,b_idx]+\
+                         G_del[bus_ph_index,b_idx])*assets[i].Pnet_ems[t]
                         Q_lin_buses[bus_id,ph_i] +=\
-                        (ID_wye[bus_ph_index,b_idx]+\
-                         ID_del[bus_ph_index,b_idx])*assets[i].Qnet_ems[t]
+                        (G_wye[bus_ph_index,b_idx]+\
+                         G_del[bus_ph_index,b_idx])*assets[i].Qnet_ems[t]
                         """
 
         network_t = copy.deepcopy(self)#.network)
