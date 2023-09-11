@@ -496,7 +496,7 @@ class Network_3ph:
                     G_del[bus_ph_index,b_idx] = 1/asset_N_phases
         return G_wye, G_del
 
-    def get_linear_parameters(self, assets, t):
+    def get_linear_parameters(self, assets, t, t0):
         """
         Get linear parameters for linear optimisation
 
@@ -506,25 +506,28 @@ class Network_3ph:
             list of the non_dispatchable assets in the network
         t : int
             time
+        t0 : int
+            first slot of observation
 
         Returns
         --------
-        A_Pslack_nd : 2d array
-            submatrix(G) for which the rows corespond to buses connected to nondispatchable loads
+        A_Pslack : numpy.ndarray (2*Nbr of connected buses, )
+            submatrix(G) for which the rows correspond to the connected buses  
         b_Pslack : float
             g_0
-        A_vlim_nd : 2d array
-            submatrix(K) for which the rows corespond to buses connected to nondispatchable loads
+        A_vlim : numpy.ndarray (N_buses*N_phases*, 2*Nbr of connected buses)
+            submatrix(K) for which the rows correspond to the connected buses
         b_vlim : float
             k_0
-        v_abs_min_vec :
-        v_abs_max_vec : 1d array
+        v_abs_min_vec : numpy.ndarray (N_buses*N_phases, )
             vector of minimum voltage limit
-        A_lines : list
-            list of submatrices(J) over lines connected to nondispatchable loads
-        i_lim : float
+        v_abs_max_vec : numpy.ndarray
+            vector of maximum voltage limit (N_buses*N_phases, )
+        A_lines : list of numpy.ndarray, len=N_lines, (N_phases, 2*Nbr of connected buses)
+            list of submatrices(J) over lines connected
+        i_lim : list, len=N_lines
             j0
-        i_abs_max :  1d array
+        i_abs_max :  numpy.ndarray (N_lines,)
             vector of maximum thermal limit
         
         """
@@ -551,12 +554,30 @@ class Network_3ph:
                 ## here, Gwye/del[., b_idx] with b_idx is the position of the asset bus par rapport all connected buses
                 for ph_i in phases_i: #np.nditer(phases_i):
                     bus_ph_index = 3*(bus_id-1) + ph_i
+                    for ph_i in phases_i: #np.nditer(phases_i):
+                    bus_ph_index = 3*(bus_id-1) + ph_i
+                    if t == t0:
+                        P_lin_buses[bus_id,ph_i] +=\
+                        (G_wye_nondispatch[bus_ph_index,i]+\
+                         G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Pnet_ems[t] #P_demand[t_ems-t0, i]
+                        Q_lin_buses[bus_id,ph_i] +=\
+                        (G_wye_nondispatch[bus_ph_index,i]+\
+                         G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Qnet_ems[t] #Q_demand[t_ems-t0, i]
+                    else:
+                        P_lin_buses[bus_id,ph_i] +=\
+                        (G_wye_nondispatch[bus_ph_index,i]+\
+                         G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Pnet_ems_pred[t] #P_demand[t_ems-t0, i]
+                        Q_lin_buses[bus_id,ph_i] +=\
+                        (G_wye_nondispatch[bus_ph_index,i]+\
+                         G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Qnet_ems_pred[t]
+                    """
                     P_lin_buses[bus_id,ph_i] +=\
-                    (G_wye[bus_ph_index,b_idx]+\
-                     G_del[bus_ph_index,b_idx])*assets[i].Pnet_ems[t]
+                    (ID_wye[bus_ph_index,b_idx]+\
+                     ID_del[bus_ph_index,b_idx])*assets[i].Pnet_ems[t]
                     Q_lin_buses[bus_id,ph_i] +=\
-                    (G_wye[bus_ph_index,b_idx]+\
-                     G_del[bus_ph_index,b_idx])*assets[i].Qnet_ems[t]
+                    (ID_wye[bus_ph_index,b_idx]+\
+                     ID_del[bus_ph_index,b_idx])*assets[i].Qnet_ems[t]
+                    """
 
         network_t = copy.deepcopy(self)#.network)
         network_t.clear_loads()  #self.clear
@@ -645,8 +666,7 @@ class Network_3ph:
             A_lines = np.concatenate((A_lines, A_line), axis=0)  
 
                                                                                       #(3Nl, N_loads)              
-        return A_Pslack, b_Pslack, A_vlim, b_vlim, v_abs_min_vec, v_abs_max_vec, A_lines, i_lim, np.array(i_abs_max)
-        
+        return A_Pslack, b_Pslack, A_vlim, b_vlim, v_abs_min_vec, v_abs_max_vec, A_lines, i_lim, np.array(i_abs_max)        
     def zbus_pf(self):
         """
         Solves the nonlinear power flow problem using the Z-bus method 
