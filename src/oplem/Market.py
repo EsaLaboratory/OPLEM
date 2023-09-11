@@ -367,7 +367,7 @@ class Central_market(Market):
 				#### end lines for dlmps
 
 			for t_ems in range(self.T_market-self.t_ahead_0):	
-				A_Pslack, b_Pslack, A_vlim, b_vlim, v_abs_min_vec, v_abs_max_vec, A_lines,_, _ = self.network.get_linear_parameters(participant_all.assets, t_ems+self.t_ahead_0)
+				A_Pslack, b_Pslack, A_vlim, b_vlim, v_abs_min_vec, v_abs_max_vec, A_lines,_, _ = self.network.get_linear_parameters(participant_all.assets, t_ems+self.t_ahead_0, self.t_ahead_0)
 				A_Pslack_list.append(A_Pslack) 
 				A_vlim_list.append(A_vlim)
 				A_line_list.append(A_lines)
