@@ -1626,6 +1626,7 @@ class Network_3ph:
                                                                   'Zab': Zab_i, 'Zac': Zac_i, 'Zbc': Zbc_i,
                                                                   'Baa': Baa_i, 'Bbb': Bbb_i, 'Bcc': Bcc_i,
                                                                   'Bab': Bab_i, 'Bac': Bac_i, 'Bbc': Bbc_i},
+                                                                 index=[0])], axis=0, ignore_index=True)
         self.line_info_df = line_info_df
         self.line_config_df = line_config_df
         ##Add Transformer
