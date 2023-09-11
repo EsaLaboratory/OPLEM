@@ -49,7 +49,7 @@ else:
 
 ### 1) Load Data
 Loads_data_path = os.path.join("Data", "Loads_1min.csv")    
-Loads_raw = pd.read_csv(Loads_data_path, index_col=0, parse_dates=True).values
+Loads_raw = pd.read_csv(Loads_data_path, index_col=0).values
 N_loads_raw = Loads_raw.shape[1]
 Loads = Loads_raw.transpose().reshape(-1,int(dt/dt_raw)).mean(1).reshape(N_loads_raw,-1).transpose()
 Load_ems = Loads.transpose().reshape(-1,int(dt_ems/dt)).mean(1).reshape(N_loads_raw,-1).transpose()
