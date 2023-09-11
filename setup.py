@@ -20,8 +20,9 @@ setup(
     include_package_data=True,
     install_requires=[
         'cvxopt',
-        'notebook',
         'matplotlib',
+        'mosek',
+        'notebook',
         'numpy',
         'pandapower',
         'pandas',
