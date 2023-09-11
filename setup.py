@@ -16,7 +16,7 @@ setup(
     packages=['oplem'], #same as name
     packages=find_packages(where="src"),
     package_dir={"": "src"},
-    include_package_data=True
+    include_package_data=True,
     install_requires=[
         'cvxopt',
         'notebook',
@@ -26,7 +26,7 @@ setup(
         'pandas',
         'PICOS',
         'scikit-learn',
-        'scipy'
-
+        'scipy',
+        'oplem'
     ],
 )
