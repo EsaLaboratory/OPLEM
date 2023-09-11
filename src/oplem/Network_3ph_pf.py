@@ -555,29 +555,29 @@ class Network_3ph:
                 for ph_i in phases_i: #np.nditer(phases_i):
                     bus_ph_index = 3*(bus_id-1) + ph_i
                     for ph_i in phases_i: #np.nditer(phases_i):
-                    bus_ph_index = 3*(bus_id-1) + ph_i
-                    if t == t0:
+                        bus_ph_index = 3*(bus_id-1) + ph_i
+                        if t == t0:
+                            P_lin_buses[bus_id,ph_i] +=\
+                            (G_wye_nondispatch[bus_ph_index,i]+\
+                             G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Pnet_ems[t] #P_demand[t_ems-t0, i]
+                            Q_lin_buses[bus_id,ph_i] +=\
+                            (G_wye_nondispatch[bus_ph_index,i]+\
+                             G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Qnet_ems[t] #Q_demand[t_ems-t0, i]
+                        else:
+                            P_lin_buses[bus_id,ph_i] +=\
+                            (G_wye_nondispatch[bus_ph_index,i]+\
+                             G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Pnet_ems_pred[t] #P_demand[t_ems-t0, i]
+                            Q_lin_buses[bus_id,ph_i] +=\
+                            (G_wye_nondispatch[bus_ph_index,i]+\
+                             G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Qnet_ems_pred[t]
+                        """
                         P_lin_buses[bus_id,ph_i] +=\
-                        (G_wye_nondispatch[bus_ph_index,i]+\
-                         G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Pnet_ems[t] #P_demand[t_ems-t0, i]
+                        (ID_wye[bus_ph_index,b_idx]+\
+                         ID_del[bus_ph_index,b_idx])*assets[i].Pnet_ems[t]
                         Q_lin_buses[bus_id,ph_i] +=\
-                        (G_wye_nondispatch[bus_ph_index,i]+\
-                         G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Qnet_ems[t] #Q_demand[t_ems-t0, i]
-                    else:
-                        P_lin_buses[bus_id,ph_i] +=\
-                        (G_wye_nondispatch[bus_ph_index,i]+\
-                         G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Pnet_ems_pred[t] #P_demand[t_ems-t0, i]
-                        Q_lin_buses[bus_id,ph_i] +=\
-                        (G_wye_nondispatch[bus_ph_index,i]+\
-                         G_del_nondispatch[bus_ph_index,i])*assets_nd[i].Qnet_ems_pred[t]
-                    """
-                    P_lin_buses[bus_id,ph_i] +=\
-                    (ID_wye[bus_ph_index,b_idx]+\
-                     ID_del[bus_ph_index,b_idx])*assets[i].Pnet_ems[t]
-                    Q_lin_buses[bus_id,ph_i] +=\
-                    (ID_wye[bus_ph_index,b_idx]+\
-                     ID_del[bus_ph_index,b_idx])*assets[i].Qnet_ems[t]
-                    """
+                        (ID_wye[bus_ph_index,b_idx]+\
+                         ID_del[bus_ph_index,b_idx])*assets[i].Qnet_ems[t]
+                        """
 
         network_t = copy.deepcopy(self)#.network)
         network_t.clear_loads()  #self.clear
