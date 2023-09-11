@@ -1,1 +1,1 @@
-recursive-include src/oplem/Data/networks/ *
+recursive-include src/oplem/Data *
