@@ -18,6 +18,8 @@ from scipy.linalg import block_diag
 import sys, os, time
 import copy
 import importlib.resources
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 __version__ = "1.0.0"
 
