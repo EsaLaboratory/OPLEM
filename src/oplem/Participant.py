@@ -139,9 +139,8 @@ class Participant:
 	
 	        Returns
 	        --------
-	        (A_agg, b_agg):  numpy.ndarray (6``T_ems-t0``,2``T_ems-t0``), numpy.ndarray (6``T_ems-t0``,)
+	        (A_agg, b_agg):  numpy.ndarray (6 (``T_ems-t_ahead_0``), 2 (``T_ems-t_ahead_0``)), numpy.ndarray (6 (``T_ems-t_ahead_0``,)
 			Aggregated slope, aggregated intercept
-
         	"""
 
 		initial_A, initial_b = [], []
