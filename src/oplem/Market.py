@@ -33,7 +33,7 @@ import numpy as np
 import pickle
 import time
 import picos as pic
-import oplem.Participant as Participant
+#import oplem.Participant as Participant
 
 
 __version__ = "1.1.0"
