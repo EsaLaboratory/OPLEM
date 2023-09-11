@@ -221,14 +221,12 @@ voltage = np.zeros((T_ems, 2))
 
 for t, network_sim in enumerate(network_pf):
     buses_Vpu = np.abs(network_sim.v_net_res)/network_sim.Vslack_ph  
-    vn =min(filter(lambda x: x != 0, buses_Vpu))
-    voltage[t, 0] = vn
+    voltage[t, 0] = np.min(buses_Vpu) 
     voltage[t, 1] = np.max(buses_Vpu)
     
     if np.max(buses_Vpu)>1.05:
         print('for t ={}, Vmax={} at index: {}'.format(t, np.max(buses_Vpu), np.argmax(buses_Vpu)))
-    elif vn<0.95:
-        ind = np.where(buses_Vpu==vn)
-        print('for t ={}, Vmin={} at index: {}'.format(t, vn, ind))
+    elif np.min(buses_Vpu) <0.95:
+        print('for t ={}, Vmin={} at index: {}'.format(t, np.min(buses_Vpu), np.argmin(buses_Vpu) ))
 
 pickle.dump((voltage), open( "Results\\ToU\\voltage.p", "wb" ) )
