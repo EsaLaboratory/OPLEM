@@ -983,7 +983,7 @@ class NondispatchableAsset(Asset):
     Non-dispachable Asset  
     """
 
-    def __init__(self, Pnet, Qnet, bus_id, dt, T, dt_ems, T_ems, phases=[0, 1, 2], Pnet_pred=None, Qnet_pred=None, curt=False):
+    def __init__(self, Pnet, Qnet, bus_id, dt, T, dt_ems, T_ems, phases=[0, 1, 2], Pnet_pred=None, Qnet_pred=None, curt=False, LoG='load'):
         Asset.__init__(self, bus_id, dt, T, dt_ems, T_ems, phases=phases)
         self.Pnet = Pnet
         self.Qnet = Qnet
@@ -1004,6 +1004,7 @@ class NondispatchableAsset(Asset):
         self.Qnet_ems = timescale(self.Pnet, self.dt, self.dt_ems)
 
         self.curt = curt
+        self.LoG = LoG
 
     def mpc_demand(self, t0=0, q_val=False):
         """
