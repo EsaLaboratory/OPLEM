@@ -37,6 +37,7 @@ More advanced case studies can be found under the root directory of the repo:
 - test_TOU_Market.py
 - test_P2P_Market.py
 - test_Central_Market.py
+
 Note that the 3 case studies need to be run under a directory that contains the Data folder in the root of the repo
 
 License
