@@ -6,6 +6,9 @@ For further details on the example case studies, please refer here [1]_
 Three case studies are presented to showcase the three markets.
 All markets consider the reduced European low voltage (EULV) network with 55 load buses, of which 33 buses have connected PV panels, 16 buses with battery storage systems and 16 buses with heat pumps.
 
+.. note::
+   The case studies need to be run under a directory that contains the Data folder in the root of the repo
+
 Time of Use (ToU) Market
 -------------------------
 ToU market considers a decentralised approach for energy trading. Every customer/participant optimises its resources in response to a market price signal.
