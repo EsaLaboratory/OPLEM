@@ -194,7 +194,7 @@ class Participant:
 		x= x.value
 		return prob.value
 
-	def power_desaggregation(self, p_agg, assets, t_ahead_0=0):
+	def power_disaggregation(self, p_agg, assets, t_ahead_0=0):
 		"""
 		produces a feasible power vector for each asset in the list from the aggregated power schedule p_agg.
 		
