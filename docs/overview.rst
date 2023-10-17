@@ -51,14 +51,25 @@ Fig. 1 shows a universal modelling language (UML) class diagram of OPLEM with th
 
 **Fig. 1 - UML class diagram of OPLEM, showing the main classes, attributes and methods.**
 
-Fig. 2 shows a high-level program flow diagram for an example of market MPC application.
+The details of interactions between the different modules is demonstrated in Fig. 2. The procedure starts by loading a network, which lays down the physical infrastructure of the power system to be modelled.  
+To the network infrastructure, we connect assets. The participants are then declared, with each participant possessing a portfolio of the connected assets. The market is defined by the list of its participants and the set of prices.
+Depending on the selected market, a market clearing method runs and the result of the clearing is used to update the assets' schedules. After the profiles of the assets are updated, a network simulation runs to analyse the impact of the market clearing on the network.
 
-.. image:: _imgs/OPEN_ProgramFlow_Vert3.svg
+.. image:: _imgs/OPLEM_flow.svg
   :width: 400 px
   :scale: 50
   :alt: High-level program flow for an MPC OPLEM application.
 
-**Fig. 2 - High-level program flow for an MPC OPLEM application.**
+**Fig. 2 - Interaction diagram of OPLEM displaying the different interaction flows between the tool modules.**
+
+Fig. 3 shows a high-level program flow diagram for an example of an MPC market application.
+
+.. image:: _imgs/OPLEM_mpc.svg
+  :width: 400 px
+  :scale: 50
+  :alt: High-level program flow for an MPC OPLEM application.
+
+**Fig. 3 - High-level program flow for an MPC OPLEM market application.**
 
 Networks
 .........
