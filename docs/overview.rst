@@ -56,8 +56,8 @@ To the network infrastructure, we connect assets. The participants are then decl
 Depending on the selected market, a market clearing method runs and the result of the clearing is used to update the assets' schedules. After the profiles of the assets are updated, a network simulation runs to analyse the impact of the market clearing on the network.
 
 .. image:: _imgs/OPLEM_flow.svg
-  :width: 400 px
-  :scale: 50
+  :width: 800 px
+  :scale: 100
   :alt: High-level program flow for an MPC OPLEM application.
 
 **Fig. 2 - Interaction diagram of OPLEM displaying the different interaction flows between the tool modules.**
@@ -65,8 +65,8 @@ Depending on the selected market, a market clearing method runs and the result o
 Fig. 3 shows a high-level program flow diagram for an example of an MPC market application.
 
 .. image:: _imgs/OPLEM_mpc.svg
-  :width: 400 px
-  :scale: 50
+  :width: 500 px
+  :scale: 70
   :alt: High-level program flow for an MPC OPLEM application.
 
 **Fig. 3 - High-level program flow for an MPC OPLEM market application.**
