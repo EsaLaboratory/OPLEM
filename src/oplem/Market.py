@@ -287,6 +287,39 @@ class Central_market(Market):
 				 t_ahead_0=0, P_import=None, P_export=None, price_exp=None, network=None, nw_const=True):
 		Market.__init__(self, participants, dt_market, T_market, price_imp, t_ahead_0=t_ahead_0, P_import=P_import, P_export=P_export, price_exp=price_exp, network=network)
 		self.nw_const = nw_const
+
+	def mpc_market_clearing(self, v_unconstrained_buses=[], i_unconstrained_lines=[]):
+		"""
+		computes an MPC version of the central optimisation
+
+		Parameters
+		-----------
+		v_unconstained_buses : list, default =[]
+			the list of unconstained buses in the network 
+		i_unconstained_lines : list, default =[]
+			the list of unconstained lines in the network
+
+		Returns
+		------------
+		market_clearing_outcome: pd.dataframe
+			the resulting energy exchange
+	            
+	     	        +----+------+--------+-------+--------+-------+
+  			| id | time | seller | buyer | energy | price |
+  			+====+======+========+=======+========+=======+
+  			|    |	    |	     |	     |        |	      |
+			+----+------+--------+-------+--------+-------+
+	    	schedules: list of lists
+	    		assets schedules				
+		"""
+		
+		market_clearing = pd.DataFrame(columns=['time', 'seller', 'buyer', 'energy', 'price'])
+		for t in range(self.T_market):
+			self.t_ahead_0 = t
+			mc, schedules, pimp, pexp = self.market_clearing(v_unconstrained_buses=v_unconstrained_buses, i_unconstrained_lines=i_unconstrained_lines)
+			mc_t = mc[mc['time']==t]
+			market_clearing = pd.concat([market_clearing, mc_t], ignore_index=True)
+		return market_clearing, schedules
 	
 	def market_clearing(self, v_unconstrained_buses=[], i_unconstrained_lines=[]):
 		"""
@@ -588,6 +621,32 @@ class ToU_market(Market):
 		if np.all(self.P_import) ==None:
 			self.P_import = np.inf*np.ones(self.T_market)
 
+	def mpc_market_clearing(self):
+		"""
+		computes the MPC version of the energy exchange of each participant with the grid
+
+		Returns
+		-------
+		market_clearing_outcome : pandas Dataframe
+            		the resulting energy exchange
+            
+            		+----+------+--------+-------+--------+-------+
+  			| id | time | seller | buyer | energy | price |
+  			+====+======+========+=======+========+=======+
+  			|    |	    |	     |	     |        |	      |
+			+----+------+--------+-------+--------+-------+
+        	schedules : list of lists
+	    		assets schedules
+		"""
+
+		market_clearing = pd.DataFrame(columns=['time', 'seller', 'buyer', 'energy', 'price'])
+		for t in range(self.T_market):
+			self.t_ahead_0 = t
+			mc, schedules= self.market_clearing()
+			mc_t = mc[mc['time']==t]
+			market_clearing = pd.concat([market_clearing, mc_t], ignore_index=True)
+		return market_clearing, schedules
+
 	def market_clearing(self):
 		"""
 		computes the energy exchange of each participant with the grid
@@ -696,6 +755,43 @@ class P2P_market(Market):
 
 		self.buyer_indexes = list(set(self.buyer_indexes))
 		self.seller_indexes = list(set(self.seller_indexes))
+
+	def mpc_P2P_negotiation(self, trade_energy, price_inc, N_p2p_ahead_max, stopping_criterion=None):
+		"""
+        	Runs the P2P in a receding horizon and returns the outcome of a P2P negotiation procedure
+
+        	Parameters
+        	----------
+        	trade_energy : float
+        		the unit amount of energy to trade (kWh)
+        	price_inc: float
+        		the incremental step of the peers prices
+        	N_p2p_ahead_max: int
+        		maximum number of contracts between 2 peers
+        	stopping_criterion: int
+        		number of iterations that the negociation will make before stopping
+
+        	Returns
+        	--------
+        	market_clearing_outcome : pandas Dataframe
+            		the resulting energy exchange
+            
+            		+----+------+--------+-------+--------+-------+
+  			| id | time | seller | buyer | energy | price |
+  			+====+======+========+=======+========+=======+
+  			|    |	    |	     |	     |        |	      |
+			+----+------+--------+-------+--------+-------+
+        	schedules: list of lists
+	    		assets schedules
+        	""" 
+        
+		market_clearing = pd.DataFrame(columns=['time', 'seller', 'buyer', 'energy', 'price'])
+		for t in range(self.T_market):
+			self.t_ahead_0 = t
+			mc, schedules= self.P2P_negotiation(self, trade_energy, price_inc, N_p2p_ahead_max, stopping_criterion=stopping_criterion)
+			mc_t = mc[mc['time']==t]
+			market_clearing = pd.concat([market_clearing, mc_t], ignore_index=True)
+		return market_clearing, schedules
 
 	def P2P_negotiation(self, trade_energy, price_inc, N_p2p_ahead_max, stopping_criterion=None): 
 		"""
