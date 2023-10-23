@@ -23,6 +23,10 @@ T = int(24/dt) #Number of intervals
 dt_ems = 60/60
 T_ems = int(24/dt_ems)
 
+path_string = normpath('Results\\Central\\')
+if not os.path.isdir(path_string):
+    os.makedirs(path_string)
+
 #######################################
 ### STEP 0: Load Data
 #######################################
@@ -183,14 +187,13 @@ Central = Central_market(participants, dt_ems, T_ems, prices_wsm_ems[:,0], netwo
 
 ###2) Run market clearing
 start_time = time.time()                                                                    #79,112
-market_clearing_outcome, schedules, imp, exp = Central.market_clearing(v_unconstrained_buses=[], i_unconstrained_lines=np.arange(network.N_lines))
+market_clearing_outcome, schedules, info = Central.market_clearing(v_unconstrained_buses=[], i_unconstrained_lines=np.arange(network.N_lines))
 elapsed = time.time() - start_time
 print('Central time=' + str(elapsed) + ' sec')
 
 pickle.dump((market_clearing_outcome), open( "Results\\Central\\mc.p", "wb" ) )
 pickle.dump((schedules), open( "Results\\Central\\schedules.p", "wb" ) )
-pickle.dump((imp), open( "Results\\Central\\imp.p", "wb" ) )
-pickle.dump((exp), open( "Results\\Central\\exp.p", "wb" ) )
+pickle.dump((info), open( "Results\\Central\\info.p", "wb" ) )
 
 ###3) Store assets states
 Elist, Tinlist = [], []
