@@ -310,16 +310,26 @@ class Central_market(Market):
   			|    |	    |	     |	     |        |	      |
 			+----+------+--------+-------+--------+-------+
 	    	schedules: list of lists
-	    		assets schedules				
+	    		assets schedules	
+       		info: dictionary
+		    	'AP': list of P_slack linear coefficients, 
+		    	'AV': list of voltage linear coefficients,
+		    	'AL': list of lines linear coefficients,
+		    	'dual_P_bus': dual vector related to power balance at each bus,
+			'dual_P_slack': dual vector related to power balance at slack bus,
+			'dual_vbus_max': dual vector related to max limit voltage,
+			'dual_vbus_min': dual vector related to min limit voltage,
+			'dual_iline_max': dual vector related to max limit thermal line,
+			'dlmp': distributed locational marginal prices
 		"""
 		
 		market_clearing = pd.DataFrame(columns=['time', 'seller', 'buyer', 'energy', 'price'])
 		for t in range(self.T_market):
 			self.t_ahead_0 = t
-			mc, schedules, pimp, pexp = self.market_clearing(v_unconstrained_buses=v_unconstrained_buses, i_unconstrained_lines=i_unconstrained_lines)
+			mc, schedules, info = self.market_clearing(v_unconstrained_buses=v_unconstrained_buses, i_unconstrained_lines=i_unconstrained_lines)
 			mc_t = mc[mc['time']==t]
 			market_clearing = pd.concat([market_clearing, mc_t], ignore_index=True)
-		return market_clearing, schedules
+		return market_clearing, schedules, info
 	
 	def market_clearing(self, v_unconstrained_buses=[], i_unconstrained_lines=[]):
 		"""
@@ -344,13 +354,20 @@ class Central_market(Market):
 			+----+------+--------+-------+--------+-------+
 		schedules: list of numpy.ndarrays
 			each array contains an asset's schedule
-		P_imp: numpy.ndarray (``T_market-t_ahead_0``,)
-			imported power upstream
-		P_exp: numpy.ndarray (``T_market-t_ahead_0``,)
-			exported power upstream
+		info: dictionary
+		    	'AP': list of P_slack linear coefficients, 
+		    	'AV': list of voltage linear coefficients,
+		    	'AL': list of lines linear coefficients,
+		    	'dual_P_bus': dual vector related to power balance at each bus,
+			'dual_P_slack': dual vector related to power balance at slack bus,
+			'dual_vbus_max': dual vector related to max limit voltage,
+			'dual_vbus_min': dual vector related to min limit voltage,
+			'dual_iline_max': dual vector related to max limit thermal line,
+			'dlmp': distributed locational marginal prices
 
 		"""
 
+		info = {} #will be filled if nw_const=True
 		buses = [] 
 		assets_all= []
 		for par in self.participants:
@@ -427,9 +444,6 @@ class Central_market(Market):
 							                       ) 
 		                                        + self.network.Jabs_I0_list[line_ij][ph] <= self.network.i_abs_max[line_ij,ph])
 
-			pickle.dump((A_Pslack_list), open( "Results\\Central\\AP.p", "wb" ) ) 
-			pickle.dump((A_vlim_list), open( "Results\\Central\\AV.p", "wb" ) )
-			pickle.dump((A_line_list), open( "Results\\Central\\AL.p", "wb" ) )
 		else:
 			P_demand = np.sum(P_demand, axis=1)
 			# balance constraint
@@ -507,12 +521,6 @@ class Central_market(Market):
 							dual_iline_max[t, line_ij+ph] = np.squeeze(prob.get_constraint(const_index).dual)
 							const_index += 1
 
-			pickle.dump((dual_P_bus), open( "Results\\Central\\dual_P_bus.p", "wb" ) )
-			pickle.dump((dual_P_slack), open( "Results\\Central\\dual_P_slack.p", "wb" ) )
-			pickle.dump((dual_vbus_max), open( "Results\\Central\\dual_vbus_max.p", "wb" ) )
-			pickle.dump((dual_vbus_min), open( "Results\\Central\\dual_vbus_min.p", "wb" ) )
-			pickle.dump((dual_iline_max), open( "Results\\Central\\dual_iline_max.p", "wb" ) )
-
 			DLMP = np.zeros((self.T_market-self.t_ahead_0, len(buses)))
 			for t in range(self.T_market-self.t_ahead_0):
 				for b, bus in enumerate(buses):
@@ -523,7 +531,16 @@ class Central_market(Market):
 							  + np.dot( np.asarray([dual_iline_max[t,:]]) , np.nan_to_num(A_line_list[t][:, 3][:, np.newaxis]) )
 							  )
 
-			pickle.dump((DLMP), open( "Results\\Central\\DLMP.p", "wb" ) )
+			info = {'AP': A_Pslack_list,
+					'AV': A_vlim_list,
+					'AL': A_line_list,
+					'dual_P_bus': dual_P_bus,
+					'dual_P_slack': dual_P_slack,
+					'dual_vbus_max': dual_vbus_max,
+					'dual_vbus_min': dual_vbus_min,
+					'dual_iline_max': dual_iline_max,
+					'dlmp': DLMP
+			       }
 		###################################### END DLMP computation ############################################################
 
 		if len(participant_all.assets_flex):
@@ -573,7 +590,7 @@ class Central_market(Market):
 		market_clearing_outcome=pd.DataFrame(list_clearing, columns=['time', 'seller', 'buyer', 'energy', 'price'])
 		market_clearing_outcome = market_clearing_outcome.groupby(['time', 'seller', 'buyer', 'price'])['energy'].aggregate('sum').reset_index()
 
-		return market_clearing_outcome, schedules, np.array(Pimp.value), np.array(Pexp.value)
+		return market_clearing_outcome, schedules, info
 
 
 class ToU_market(Market):
