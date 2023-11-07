@@ -1249,9 +1249,9 @@ class Auction_market(Market):
 		for t in self.offers['time']: #check if t in [t0_ahead, self.T_ems]?
 			#insert upstream offers in the offers df
 			Bids = self.offers[(self.offers['participant'].isin(self.buyer_indexes)) & (self.offers['time']==t)]
-			Bids.append([t, 0, self.P_import, self.price_imp[t]])
+			Bids.append([t, 0, self.P_export, self.price_exp[t]])
 			Asks = self.offers[(self.offers['participant'].isin(self.seller_indexes)) & (self.offers['time']==t)]
-			Asks.append([t, 0, self.P_export, self.price_exp[t]])
+			Asks.append([t, 0, self.P_import, self.price_imp[t]])
 
 			#match
 			while (len(Bids) > 0 and len(Asks) > 0):
