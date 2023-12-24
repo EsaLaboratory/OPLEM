@@ -10,7 +10,7 @@ OPLEM Market module has two types of markets:
 
 (1) The energy market comes with subclasses of the common types of energy markets:
 
-(i) central market
+(i) centralised economic dispatch market
 
 (ii) time of use market
 
@@ -246,11 +246,11 @@ class Market:
 
 		return network_pf
 
-class Central_market(Market):
+class CED_market(Market):
 	"""
-	Central Market Class
+	CED Market Class
 
-	Central market runs a central optimisation market clearing
+	CED market runs a centralised economic dispatch and returns DLMPs
 
 	
 	Parameters
@@ -288,9 +288,9 @@ class Central_market(Market):
 		Market.__init__(self, participants, dt_market, T_market, price_imp, t_ahead_0=t_ahead_0, P_import=P_import, P_export=P_export, price_exp=price_exp, network=network)
 		self.nw_const = nw_const
 
-	def mpc_market_clearing(self, v_unconstrained_buses=[], i_unconstrained_lines=[]):
+	def rh_market_clearing(self, v_unconstrained_buses=[], i_unconstrained_lines=[]):
 		"""
-		computes an MPC version of the central optimisation
+		computes an rh version of the CED optimisation
 
 		Parameters
 		-----------
@@ -333,7 +333,7 @@ class Central_market(Market):
 	
 	def market_clearing(self, v_unconstrained_buses=[], i_unconstrained_lines=[]):
 		"""
-		computes assets schedules based on central optimisation
+		computes assets schedules based on CED optimisation
 
 		Parameters
 		-----------
@@ -638,9 +638,9 @@ class ToU_market(Market):
 		if np.all(self.P_import) ==None:
 			self.P_import = np.inf*np.ones(self.T_market)
 
-	def mpc_market_clearing(self):
+	def rh_market_clearing(self):
 		"""
-		computes the MPC version of the energy exchange of each participant with the grid
+		computes the rh version of the energy exchange of each participant with the grid
 
 		Returns
 		-------
@@ -773,7 +773,7 @@ class P2P_market(Market):
 		self.buyer_indexes = list(set(self.buyer_indexes))
 		self.seller_indexes = list(set(self.seller_indexes))
 
-	def mpc_P2P_negotiation(self, trade_energy, price_inc, N_p2p_ahead_max, stopping_criterion=None):
+	def rh_P2P_negotiation(self, trade_energy, price_inc, N_p2p_ahead_max, stopping_criterion=None):
 		"""
         	Runs the P2P in a receding horizon and returns the outcome of a P2P negotiation procedure
 
