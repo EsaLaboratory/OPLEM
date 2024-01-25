@@ -815,7 +815,7 @@ class StorageAsset(Asset):
         return (A,b)
 
 
-    def EV_baseline(self, t_arr, T_avail, SOC_arr):
+    def baseline(self, t_arr, T_avail, SOC_arr):
         """
         Compute the baseline consumption of an EV in the absence of flexibility
 
@@ -841,7 +841,7 @@ class StorageAsset(Asset):
         
         return P_ch
 
-    def EV_toup_baseline(self, t_arr, T_avail, SOC_arr, SOC_dep, toup):
+    def toup_baseline(self, t_arr, T_avail, SOC_arr, SOC_dep, toup):
         """
         Compute the baseline consumption of an EV in the absence of flexibility, response to TOUP signal
 
@@ -893,7 +893,7 @@ class StorageAsset(Asset):
         
         return P_ch_value
 
-    def EV_flexibility(self, t_arr, T_avail, SOC_arr, SOC_dep, T_flex, flex_type='up'):
+    def flexibility(self, t_arr, T_avail, SOC_arr, SOC_dep, T_flex, flex_type='up'):
         """
         Compute the flexibility that can be provided by the EV for the period T_flex  
 
