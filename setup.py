@@ -24,6 +24,7 @@ setup(
         'mosek',
         'notebook',
         'numpy',
+        'openpyxl',
         'pandapower',
         'pandas',
         'PICOS',
