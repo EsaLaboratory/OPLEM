@@ -14,6 +14,7 @@ OPLEM documentation can be found [here](https://open-new.readthedocs.io/en/lates
 
 Installation
 -------------
+0. Pre-requesite: Git should be installed and added to the PATH.
 1. Create a conda virtual environment:
 ```
 conda create --name <name_env> python=3.11
