@@ -803,7 +803,7 @@ class StorageAsset(Asset):
         self_dis_pow = np.flip(Gamma[-1])
         self_dis_pow = self_dis_pow[:self.T_ems-t0] #[t0:]
 
-        b= np.concatenate((self.Pmax[t0:], np.zeros(self.T_ems-t0), np.zeros(self.T_ems-t0), self.Pmin[t0:], 
+        b= np.concatenate((self.Pmax[t0:], np.zeros(self.T_ems-t0), np.zeros(self.T_ems-t0), -self.Pmin[t0:], 
                         #self.Emax[t0:] - (self.E_ems[t0-1]*self_dis_pow
                         self.Emax[t0:] - (self.E0*self_dis_pow + self.E_ems[t0] - self.self_dis**t0*self.E0), 
                         #[self.ET- self.E_ems[t0-1]*self_dis_pow],   #ensure E[T_ems] == ET
