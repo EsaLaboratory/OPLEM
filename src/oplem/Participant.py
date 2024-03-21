@@ -94,16 +94,16 @@ class Participant:
 			elif asset.type == 'building':
 				self.Pmax += max(asset.Hmax, asset.Cmax)
 				#self.Pmin += -asset.Cmax
-			elif asset.type == 'ND' and np.all(asset.Pnet)>=0:
+			elif (asset.type == 'ND' or asset.type == 'curt') and np.all(asset.Pnet)>=0:
 				self.Pload_ems += asset.Pnet_ems
 				self.Qload_ems += asset.Qnet_ems
-			elif asset.type == 'ND' and np.all(asset.Pnet)<=0:
+			elif (asset.type == 'ND' or asset.type == 'curt') and np.all(asset.Pnet)<=0:
 				self.Pgen_ems += asset.Pnet_ems
 				self.Qgen_ems += asset.Qnet_ems
-			elif asset.type == 'ND' and np.all(asset.Pnet_pred)>=0:
+			elif (asset.type == 'ND' or asset.type == 'curt') and np.all(asset.Pnet_pred)>=0:
 				self.Pload_pred_ems += asset.Pnet_pred_ems
 				self.Qload_pred_ems += asset.Qnet_pred_ems
-			elif asset.type == 'ND' and np.all(asset.Pnet_pred)<=0:
+			elif (asset.type == 'ND' or asset.type == 'curt') and np.all(asset.Pnet_pred)<=0:
 				self.Pgen_pred_ems += asset.Pnet_pred_ems
 				self.Qgen_pred_ems += asset.Qnet_pred_ems
 
@@ -114,11 +114,13 @@ class Participant:
 		
 		self.c1_deg = np.mean(np.asarray(self.c1_deg)) if self.c1_deg else 0
 
-		self.assets_flex, self.assets_nd = [], []
+		self.assets_flex, self.assets_nd, self.assets_curt = [], [], []
 		for asset in self.assets:
-			if asset.type != 'ND':
-			    self.assets_flex.append(asset)
-			else: self.assets_nd.append(asset)
+			if asset.type == 'ND':
+			    self.assets_nd.append(asset) 
+			elif asset.type == 'curt':
+				self.assets_curt.append(asset)
+			else: self.assets_flex.append(asset)
 
 	def polytope(self, assets, t0=0):
 		"""
@@ -255,9 +257,11 @@ class Participant:
         """
 
 		#Assemble P_demand out of P actual and P predicted and convert to EMS time series scale
-		P_demand = np.zeros([self.T_ems-t0,len(self.assets_nd)])
+		P_demand = np.zeros([self.T_ems-t0,len(self.assets_nd)+len(self.assets_curt)])
 		for i in range(len(self.assets_nd)):
 			P_demand[:,i]= self.assets_nd[i].mpc_demand(t0)
+		for i in range(len(self.assets_curt)):
+			P_demand[:,len(self.assets_nd)+i]= self.assets_curt[i].mpc_demand(t0)
 		
 		return P_demand
 
@@ -300,13 +304,13 @@ class Participant:
 
 		for bidx, bus in enumerate(buses):
 			for asset in self.assets:
-				if asset.type == 'ND'  and asset.bus_id == bus:
+				if (asset.type == 'ND' or asset.type == 'curt') and asset.bus_id == bus:
 					P_demand[:, bidx]+= asset.mpc_demand(t_ahead_0)
 					nd_assets_ind_bus[bidx].append(nd)
 					nd+=1
-				elif asset.type == 'ND' and asset.bus_id == bus and np.all(asset.Pnet_ems)>=0:
+				elif asset.type == 'curt' and asset.bus_id == bus and np.all(asset.Pnet_ems)>=0:
 					P_curt_limits[:, bidx, 1] += asset.curt*asset.mpc_demand(t_ahead_0)
-				elif asset.type == 'ND'  and asset.bus_id == bus and np.all(asset.Pnet_ems)<=0:
+				elif asset.type == 'curt'  and asset.bus_id == bus and np.all(asset.Pnet_ems)<=0:
 					P_curt_limits[:, bidx, 0] += asset.curt*asset.mpc_demand(t_ahead_0)
 				elif asset.type != 'ND' and asset.bus_id == bus:
 					flex_assets_per_bus[bidx].append(asset)
@@ -321,8 +325,8 @@ class Participant:
 		Pexp = pic.RealVariable('Pexp', (self.T_ems-t_ahead_0, len(buses)))
 		if len(self.assets_flex):
 			x = pic.RealVariable('x', (2*(self.T_ems-t_ahead_0), len(self.assets_flex)))
-		if len(self.assets_nd):
-			p_curt = pic.RealVariable('p_curt', (self.T_ems-t_ahead_0, len(self.assets_nd)))
+		if len(self.assets_curt):
+			p_curt = pic.RealVariable('p_curt', (self.T_ems-t_ahead_0, len(self.assets_curt)))
 	    
 		for bidx in range(len(buses)):	
 			# balance constraint
@@ -345,7 +349,7 @@ class Participant:
 			prob.add_constraint(A*x[:, a] <= b)
 
 		#curtailment
-		for a, asset in enumerate(self.assets_nd):
+		for a, asset in enumerate(self.assets_curt):
 			if np.all(asset.Pnet_ems)<=0:
 				prob.add_constraint(p_curt[:, a] <= 0) 
 				prob.add_constraint(p_curt[:, a] >= np.minimum(asset.curt*asset.mpc_demand(t_ahead_0),0) )
@@ -372,14 +376,14 @@ class Participant:
 		print('* Updating resources for participant {}...'.format(self.p_id))
 		if len(self.assets_flex):
 			x = np.array(x.value)
-		if len(self.assets_nd):
+		if len(self.assets_curt):
 			p_curt = np.array(p_curt.value)
 
 		for a, asset in enumerate(self.assets_flex):
 			if asset.type =='storage': #isinstance(asset, Asset.StorageAsset):
 				asset.update_ems(x[:self.T_ems-t_ahead_0, a] + x[self.T_ems-t_ahead_0:,a], t_ahead_0, enforce_const=False)
 			else: asset.update_ems(x[:self.T_ems-t_ahead_0, a] - x[self.T_ems-t_ahead_0:,a], t_ahead_0, enforce_const=False)
-		for a, asset in enumerate(self.assets_nd):
+		for a, asset in enumerate(self.assets_curt):
 			asset.update_ems(p_curt[:, a], t_ahead_0)	
 
 		schedule = []
