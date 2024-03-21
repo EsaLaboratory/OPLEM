@@ -1098,7 +1098,7 @@ class CurtailableAsset(Asset):
         else:
             self.Qnet_pred = Qnet
 
-        self.type = 'ND'
+        self.type = 'curt'
         self.Pnet_ems_pred = timescale(self.Pnet_pred, self.dt, self.dt_ems)
         self.Pnet_ems = timescale(self.Pnet, self.dt, self.dt_ems)
 
