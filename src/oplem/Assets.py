@@ -975,12 +975,114 @@ class NondispatchableAsset(Asset):
         predicted real input powers over the simulation time series (kW)
     Qnet_pred : numpy.ndarray (``T``,), default None
         predicted reactive input powers over the simulation time series (kVar)
+
+    Returns
+    -------
+    Non-dispachable Asset  
+    """
+
+    def __init__(self, Pnet, Qnet, bus_id, dt, T, dt_ems, T_ems, phases=[0, 1, 2], Pnet_pred=None, Qnet_pred=None, LoG='load'):
+        Asset.__init__(self, bus_id, dt, T, dt_ems, T_ems, phases=phases)
+        self.Pnet = Pnet
+        self.Qnet = Qnet
+        if Pnet_pred is not None:
+            self.Pnet_pred = Pnet_pred
+        else:
+            self.Pnet_pred = Pnet
+        if Qnet_pred is not None:
+            self.Qnet_pred = Qnet_pred
+        else:
+            self.Qnet_pred = Qnet
+
+        self.type = 'ND'
+        self.Pnet_ems_pred = timescale(self.Pnet_pred, self.dt, self.dt_ems)
+        self.Pnet_ems = timescale(self.Pnet, self.dt, self.dt_ems)
+
+        self.Qnet_ems_pred = timescale(self.Pnet_pred, self.dt, self.dt_ems)
+        self.Qnet_ems = timescale(self.Pnet, self.dt, self.dt_ems)
+
+        self.LoG = LoG
+
+    def mpc_demand(self, t0=0, q_val=False):
+        """
+        a power vector composed of the actual realisation of the current time step and the predicted values for the future time steps
+        
+        Parameters
+        ---------------
+        t0 : int, default=0
+            first time slot of observation
+        q_val: bool, default false
+            returns reactive power values or not
+
+        Returns
+        ----------------
+        demand: numpy.ndarray (``T_ems``,)
+            power vector
+        qdemand: numpy.ndarray (``T_ems``,)
+            reactive power vector     
+        """
+
+        demand, qdemand = np.zeros(self.T_ems-t0), np.zeros(self.T_ems-t0)
+        demand[0]=self.Pnet_ems[t0]
+        demand[1:]=self.Pnet_ems_pred[t0+1:]
+
+        qdemand[0]=self.Qnet_ems[t0]
+        qdemand[1:]=self.Qnet_ems_pred[t0+1:]
+
+        if q_val: 
+            return demand, qdemand
+        else:
+            return demand
+
+    def polytope(self, t0):
+        """
+        Computes the polytope representation of the asset operational constraints following the optimisation time scale
+        Ax <= b, 
+        
+        with x=[P_in, P_out] and P_in (P_out) is  the absorbed (injected) power over the optimisation horizon T_ems
+        
+        Following [1]_
+
+        Parameters
+        ----------
+        t0: int, default=0 
+            starting time slot for the polytope model in optimisation time scale
+
+        Returns
+        --------
+        A, b :  (6 (``T_ems-t_ahead_0``), 2 (``T_ems-t_ahead_0``)), numpy.ndarray (6 (``T_ems-t_ahead_0``,)
+            slope and intercept
+        """
+
+        A = np.concatenate((np.identity(self.T_ems-t0), np.identity(self.T_ems-t0)), axis=1)
+        if self.curt:
+            b= np.concatenate(([self.Pnet_ems[t0]], self.Pnet_ems_pred[t0+1:], np.zeros(self.T_ems-t0)), axis=0)
+        else: 
+            b= np.concatenate(([self.Pnet_ems[t0]], self.Pnet_ems_pred[t0+1:], [-self.Pnet_ems[t0]], -self.Pnet_ems_pred[t0+1:]), axis=0)
+
+        return (A,b)
+
+class CurtailableAsset(Asset):
+    """
+    A 3 phase nondispatchable asset class (use for inflexible loads,
+    PVsources etc)
+
+    Parameters
+    ----------
+    Pnet : numpy.ndarray (``T``,)
+        uncontrolled real input powers over the simulation time series
+    Qnet : numpy.ndarray (``T``,)
+        uncontrolled reactive input powers over the simulation time series (kVar)
+    Pnet_pred : numpy.ndarray (``T``,), default None
+        predicted real input powers over the simulation time series (kW)
+    Qnet_pred : numpy.ndarray (``T``,), default None
+        predicted reactive input powers over the simulation time series (kVar)
     curt : bool, default False
         if the power can be curtailed or not
 
     Returns
     -------
-    Non-dispachable Asset  
+    Curtailable Asset  
     """
 
     def __init__(self, Pnet, Qnet, bus_id, dt, T, dt_ems, T_ems, phases=[0, 1, 2], Pnet_pred=None, Qnet_pred=None, curt=False, LoG='load'):
@@ -1087,5 +1189,3 @@ class NondispatchableAsset(Asset):
 
         return (A,b)
 
-if __name__ == "__main__":
-    pass
