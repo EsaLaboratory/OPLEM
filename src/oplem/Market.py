@@ -383,7 +383,7 @@ class CED_market(Market):
 		### lines added for dlmps
 		index_assets_load_per_bus =  [[] for _ in range(len(buses))]
 		index_assets_gen_per_bus =  [[] for _ in range(len(buses))]
-		for a, asset in enumerate(participant_all.assets_nd):
+		for a, asset in enumerate(participant_all.assets_curt):
 			b_idx=buses.index(asset.bus_id)
 			if asset.LoG == 'load':
 				index_assets_load_per_bus[b_idx].append(a)
@@ -400,8 +400,8 @@ class CED_market(Market):
 		Pexp = pic.RealVariable('Pexp', self.T_market-self.t_ahead_0)
 		if len(participant_all.assets_flex):
 			x = pic.RealVariable('x', (2*(self.T_market-self.t_ahead_0), len(participant_all.assets_flex)))
-		if len(participant_all.assets_nd):
-			p_curt = pic.RealVariable('p_curt', (self.T_market-self.t_ahead_0, len(participant_all.assets_nd)))
+		if len(participant_all.assets_curt):
+			p_curt = pic.RealVariable('p_curt', (self.T_market-self.t_ahead_0, len(participant_all.assets_curt)))
 		#auxilary variable added to retrieve dlmps
 		pbus = pic.RealVariable('pbus', (self.T_market-self.t_ahead_0, len(buses)) )
 		
@@ -410,8 +410,8 @@ class CED_market(Market):
 			A_Pslack_list, A_vlim_list, A_line_list = [], [], []
 			for t_ems in range(self.T_market-self.t_ahead_0):
 				#balance per bus
-				prob.add_list_of_constraints([pbus[t_ems, bus] ==  sum(-p_curt[t_ems, k] for k in index_assets_load_per_bus[bus])
-					                                             + sum(P_demand[t_ems, k]-p_curt[t_ems, k] for k in index_assets_gen_per_bus[bus]) #
+				prob.add_list_of_constraints([pbus[t_ems, bus] ==  sum(P_demand[t_ems, len(participant_all.assets_nd)+k]-p_curt[t_ems, k] for k in index_assets_load_per_bus[bus])
+					                                         + sum(P_demand[t_ems, len(participant_all.assets_nd)+k]-p_curt[t_ems, k] for k in index_assets_gen_per_bus[bus]) #
 				                                                 + sum(x[t_ems, i] + x[self.T_market-self.t_ahead_0+t_ems, i] for i in index_assets_flex_per_bus[bus]) 
 				                              for bus in range(len(buses))])
 				#### end lines for dlmps
@@ -447,7 +447,7 @@ class CED_market(Market):
 		else:
 			P_demand = np.sum(P_demand, axis=1)
 			# balance constraint
-			prob.add_constraint( P_demand - sum(p_curt[:, a] for a in range(len(participant_all.assets_nd))) 
+			prob.add_constraint( P_demand - sum(p_curt[:, a] for a in range(len(participant_all.assets_curt))) 
 		    	               + sum(x[: self.T_market-self.t_ahead_0, a] + x[self.T_market-self.t_ahead_0:, a] for a in range(len(participant_all.assets_flex)))\
 		                      == Pimp- Pexp)
 
@@ -458,7 +458,7 @@ class CED_market(Market):
 			prob.add_constraint(A*x[:, a] <= b)
 		
 		#curtailment		
-		for a, asset in enumerate(participant_all.assets_nd):
+		for a, asset in enumerate(participant_all.assets_curt):
 			if asset.LoG=='gen':
 				prob.add_constraint(p_curt[:, a] <= 0) 
 				prob.add_constraint(p_curt[:, a] >= np.minimum(asset.curt*asset.mpc_demand(self.t_ahead_0),0) )
@@ -545,12 +545,12 @@ class CED_market(Market):
 
 		if len(participant_all.assets_flex):
 			x = np.array(x.value)				
-		if len(participant_all.assets_nd):
+		if len(participant_all.assets_curt):
 			p_curt = np.array(p_curt.value)			
 		
 		print('* Establishing clearing outcome & Updating resources for assets ...')
 		list_clearing = []
-		nd, flex = 0, 0
+		crt, flex = 0, 0
 		schedules = [[] for _ in range(len(self.participants))]
 		for p_idx, par in enumerate(self.participants):
 			print('*** Updating resources for assets | participant {}...'.format(par.p_id))
@@ -560,16 +560,15 @@ class CED_market(Market):
 				if self.nw_const:
 					price = DLMP[:, bus] 
 
-				if asset.type == 'ND':			
-					asset.update_ems(p_curt[:, nd], self.t_ahead_0)	
+				if asset.type == 'curt':			
+					asset.update_ems(p_curt[:, crt], self.t_ahead_0)	
 					schedules[p_idx].append(asset.Pnet_ems[self.t_ahead_0:])
 					sch = asset.Pnet_ems[self.t_ahead_0:]
-					nd +=1
-				else:
-					if asset.type == 'storage':
-						asset.update_ems(x[:self.T_market-self.t_ahead_0, flex]+ x[self.T_market-self.t_ahead_0:, flex], self.t_ahead_0, enforce_const=False)
-					else:
-						asset.update_ems(x[:self.T_market-self.t_ahead_0, flex]- x[self.T_market-self.t_ahead_0:, flex], self.t_ahead_0, enforce_const=False)
+					crt +=1
+				elif asset.type == 'storage':
+					asset.update_ems(x[:self.T_market-self.t_ahead_0, flex]+ x[self.T_market-self.t_ahead_0:, flex], self.t_ahead_0, enforce_const=False)
+				elif asset.type == 'building':
+					asset.update_ems(x[:self.T_market-self.t_ahead_0, flex]- x[self.T_market-self.t_ahead_0:, flex], self.t_ahead_0, enforce_const=False)
 
 					schedules[p_idx].append(asset.Pnet_ems[self.t_ahead_0:])
 					sch = asset.Pnet_ems[self.t_ahead_0:]
@@ -953,7 +952,7 @@ class P2P_market(Market):
 					asset.update_ems(par_pref_output_final[i]['p_flex'][:self.T_market-self.t_ahead_0, d] - par_pref_output_final[i]['p_flex'][self.T_market-self.t_ahead_0:, d], self.t_ahead_0, enforce_const=False)
 					schedule.append(asset.Pnet_ems[self.t_ahead_0:])
 					d+=1
-				else:
+				elif asset.type=='curt':
 					asset.update_ems(par_pref_output_final[i]['p_curt'][:, nd], self.t_ahead_0)	
 					schedule.append(asset.Pnet_ems[self.t_ahead_0:])
 					#asset.Pnet_ems[self.t_ahead_0:] = asset.Pnet_ems[self.t_ahead_0:] - par_pref_output_final[i]['p_curt'][:, nd] 
@@ -1060,8 +1059,8 @@ class P2P_market(Market):
 			p_flex = pic.RealVariable('p_flex', (2*T_dec, len(participant.assets_flex)))
 		else:
 			p_flex = pic.new_param('p_flex', np.zeros((2*T_dec,2)))
-		if len(participant.assets_nd):
-			p_curt = pic.RealVariable('p_curt',(T_dec, len(participant.assets_nd)))
+		if len(participant.assets_curt):
+			p_curt = pic.RealVariable('p_curt',(T_dec, len(participant.assets_curt)))
 		else:
 			p_curt = np.zeros((T_dec,2))
 
@@ -1095,8 +1094,8 @@ class P2P_market(Market):
 				prob.add_constraint(A*p_flex[:,a] <= b)
 		
 		#curtailing non dispatchable load
-		if len(participant.assets_nd):
-			for a, asset in enumerate(participant.assets_nd):
+		if len(participant.assets_curt):
+			for a, asset in enumerate(participant.assets_curt):
 				if np.all(asset.Pnet_ems)<=0:
 					prob.add_constraint(p_curt[:, a] <= 0) 
 					prob.add_constraint(p_curt[:, a] >= np.minimum(asset.curt*asset.mpc_demand(self.t_ahead_0),0))
@@ -1143,7 +1142,7 @@ class P2P_market(Market):
 		q_us_full_list[np.where((trade_list[:,trades_buyer_col]== participant.p_id).astype(bool))] = q_us.value
 		q_ds_full_list[np.where((trade_list[:,trades_seller_col]== participant.p_id).astype(bool))] = q_ds.value
 
-		if len(participant.assets_nd):
+		if len(participant.assets_curt):
 			p_curt_val = np.array(p_curt.value)
 		else: p_curt_val = None
 
