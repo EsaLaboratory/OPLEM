@@ -149,7 +149,7 @@ for i in range(N_loads):
     
     if i in pv_locs:
         Pnet_pv_i = -PVpu*Ppv_home_nom 
-        pv_i = AS.NondispatchableAsset(Pnet_pv_i, np.zeros(T_ems), load_buses[i], dt, T, dt_ems, T_ems, LoG='gen', phases=load_phases[i], curt=True)
+        pv_i = AS.CurtailableAsset(Pnet_pv_i, np.zeros(T_ems), load_buses[i], dt, T, dt_ems, T_ems, LoG='gen', phases=load_phases[i], curt=True)
         pv_i.Pnet_pred = pv_i.Pnet
         assets_per_participant[i].append(pv_i)
     
