@@ -547,7 +547,7 @@ class Network_3ph:
 
         #Setup linear power flow model:
         for i in range(len(assets)):
-            if  assets[i].type =='ND' and assets[i].LoG == 'load':
+            if  assets[i].type =='ND': # and assets[i].LoG == 'load':
                 bus_id = assets[i].bus_id
                 phases_i = assets[i].phases
                 b_idx =buses.index(bus_id)
