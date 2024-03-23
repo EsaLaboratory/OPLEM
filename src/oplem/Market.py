@@ -550,7 +550,7 @@ class CED_market(Market):
 		
 		print('* Establishing clearing outcome & Updating resources for assets ...')
 		list_clearing = []
-		crt, flex = 0, 0
+		crt, flex, nd = 0, 0, 0
 		schedules = [[] for _ in range(len(self.participants))]
 		for p_idx, par in enumerate(self.participants):
 			print('*** Updating resources for assets | participant {}...'.format(par.p_id))
@@ -573,6 +573,10 @@ class CED_market(Market):
 					schedules[p_idx].append(asset.Pnet_ems[self.t_ahead_0:])
 					sch = asset.Pnet_ems[self.t_ahead_0:]
 					flex +=1
+				else:
+					schedules[p_idx].append(asset.Pnet_ems[self.t_ahead_0:])
+					sch = asset.Pnet_ems[self.t_ahead_0:]
+					nd +=1
 
 				print('*** Adding asset outcome for participant {} to clearing ...'.format(par.p_id))
 				for t in range(self.T_market-self.t_ahead_0):
