@@ -184,7 +184,7 @@ FiT = 0.06*np.ones(T_ems)
 FiT = np.expand_dims(FiT, axis=1)
 
 ###1)initialise market
-Central = Central_market(participants, dt_ems, T_ems, prices_wsm_ems[:,0], network=network, t_ahead_0 = 0, price_exp=FiT)
+Central = CED_market(participants, dt_ems, T_ems, prices_wsm_ems[:,0], network=network, t_ahead_0 = 0, price_exp=FiT)
 
 ###2) Run market clearing
 start_time = time.time()                                                                    #79,112
