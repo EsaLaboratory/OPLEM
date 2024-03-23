@@ -219,6 +219,6 @@ for t, network_sim in enumerate(network_pf):
     if np.max(buses_Vpu)>1.05:
         print('for t ={}, Vmax={} at index: {}'.format(t, np.max(buses_Vpu), np.argmax(buses_Vpu)))
     elif np.min(buses_Vpu) <0.95:
-        print('for t ={}, Vmin={} at index: {}'.format(t, vn, ind))
+        print('for t ={}, Vmin={} at index: {}'.format(t, np.min(buses_Vpu), np.argmin(buses_Vpu)))
 
 pickle.dump((voltage), open( "Results\\Central\\voltage.p", "wb" ) )
