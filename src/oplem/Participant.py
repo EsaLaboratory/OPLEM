@@ -299,20 +299,21 @@ class Participant:
 		P_demand = np.zeros( (self.T_ems-t_ahead_0, len(buses)))
 		P_curt_limits = np.zeros((self.T_ems-t_ahead_0, len(buses), 2))
 		flex_assets_per_bus = [[] for _ in range(len(buses))]
-		flex_assets_ind_bus, nd_assets_ind_bus = [[] for _ in range(len(buses))], [[] for _ in range(len(buses))]
-		flex, nd = 0, 0
+		flex_assets_ind_bus, curt_assets_ind_bus = [[] for _ in range(len(buses))], [[] for _ in range(len(buses))]
+		flex, curt = 0, 0
 
 		for bidx, bus in enumerate(buses):
 			for asset in self.assets:
 				if (asset.type == 'ND' or asset.type == 'curt') and asset.bus_id == bus:
 					P_demand[:, bidx]+= asset.mpc_demand(t_ahead_0)
-					nd_assets_ind_bus[bidx].append(nd)
-					nd+=1
+					if asset.type == 'curt':
+						curt_assets_ind_bus[bidx].append(curt)
+						curt+=1
 				elif asset.type == 'curt' and asset.bus_id == bus and np.all(asset.Pnet_ems)>=0:
 					P_curt_limits[:, bidx, 1] += asset.curt*asset.mpc_demand(t_ahead_0)
 				elif asset.type == 'curt'  and asset.bus_id == bus and np.all(asset.Pnet_ems)<=0:
 					P_curt_limits[:, bidx, 0] += asset.curt*asset.mpc_demand(t_ahead_0)
-				elif asset.type != 'ND' and asset.bus_id == bus:
+				elif (asset.type == 'building' or asset.type == 'storage') and asset.bus_id == bus:
 					flex_assets_per_bus[bidx].append(asset)
 					flex_assets_ind_bus[bidx].append(flex)
 					flex+=1
@@ -330,7 +331,7 @@ class Participant:
 	    
 		for bidx in range(len(buses)):	
 			# balance constraint
-			prob.add_constraint( P_demand[:, bidx] - sum(p_curt[:, a] for a in nd_assets_ind_bus[bidx]) 
+			prob.add_constraint( P_demand[:, bidx] - sum(p_curt[:, a] for a in curt_assets_ind_bus[bidx]) 
 				               + sum(x[: self.T_ems-t_ahead_0, a] + x[self.T_ems-t_ahead_0:, a] for a in flex_assets_ind_bus[bidx])\
 			                    == Pimp[:, bidx] - Pexp[:, bidx])
 
