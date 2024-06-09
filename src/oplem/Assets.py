@@ -395,7 +395,7 @@ class BuildingAsset(Asset):
         return (A,b)
 
 
-    def maxdemand_baseline(self):
+    def HP_maxdemand_baseline(self):
         """
         Compute the baseline consumption of the building 
         by minimizing the peak demand
@@ -815,7 +815,7 @@ class StorageAsset(Asset):
         return (A,b)
 
 
-    def baseline(self, t_arr, T_avail, SOC_arr):
+    def EV_baseline(self, t_arr, T_avail, SOC_arr):
         """
         Compute the baseline consumption of an EV in the absence of flexibility
 
