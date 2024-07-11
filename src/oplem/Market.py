@@ -25,14 +25,11 @@ OPLEM Market module has two types of markets:
 
 
 #import modules
-import os
 import copy
-from os.path import normpath, join
 import pandas as pd
 import numpy as np
-import pickle
-import time
 import picos as pic
+import pandapower as pp
 import oplem.Participant as Participant
 
 
@@ -467,8 +464,8 @@ class CED_market(Market):
 				prob.add_constraint(p_curt[:, a] <= np.maximum(asset.curt*asset.mpc_demand(self.t_ahead_0),0) ) 	
 			
 		# min/max import/export	
-		Pimpmin = prob.add_constraint( Pimp >= 0)
-		Pexpmin = prob.add_constraint( Pexp >= 0)
+		prob.add_constraint( Pimp >= 0)
+		prob.add_constraint( Pexp >= 0)
 		if not(np.all(np.isinf(self.P_import))):
 			prob.add_constraint( Pimp <= self.P_import[self.t_ahead_0:]) 
 		if not(np.all(np.isinf(self.P_export))):
@@ -689,7 +686,7 @@ class ToU_market(Market):
 			list of assets schedules
 		"""
 			
-		list_clearing, schedules, outputs = [], [], []
+		list_clearing, schedules = [], []
 		for par in self.participants:
 			print('Run EMS for Participant: ' + str(par.p_id) )
 			schedule, pimp, pexp, buses = par.EMS(self.price_imp, self.P_import, self.P_export, self.price_exp, t_ahead_0=self.t_ahead_0)#, network=self.network)
@@ -1288,105 +1285,3 @@ class Auction_market(Market):
 		market_clearing_outcome=pd.DataFrame(data=list_clearing ,columns=['time', 'seller', 'buyer', 'energy', 'price'])
 
 		return market_clearing_outcome
-
-class Capacity_limits(Market):
-	"""
-	Returns the maximum capacity to absorb and inject per node per time step
-	following the paper [put ref here]
-	"""
-	def __init__(self, participants, dt_market, T_market, price_imp, t_ahead_0=0, P_import=None, P_export=None, price_exp=None, network=None):
-		Market.__init__(self, participants, dt_market, T_market, price_imp, t_ahead_0=t_ahead_0, P_import=P_import, P_export=P_export, price_exp=price_exp, network=network)
-		### participants should have only assets with inflexible load, and one participant per node
-
-	def capacity_limits(self, epsilon, Cfirm, Sigma):
-		"""
-		Returns the max capacities to absorb/inject per each node for each time step
-
-		Parameters
-		----------
-		epsilon: float ]0.5, 1]
-			the probabilistic error, probabilistic guarantee = 1-epsilon
-
-			for a deterministic solution (with no probabilistic guarantee, take epsilon=0.5)
-		Cfirm: float generally [15, 18]*1e3 kW
-			firm capacity of the transfomer upstream
-		Sigma: list of numpy.ndarray
-			each element of the list stores the variance of the inflexible loads at time step t 
-
-		Returns
-		-------
-		Cmax: numpy.ndarray (``T_market-t_ahead_0``, Nbr of nodes)
-			max capacity to absorb: 
-		Cmin: numpy.ndarray (``T_market-t_ahead_0``, Nbr of nodes)
-			max capacity to inject  (<=0)
-		"""
-		
-		assets_all = []
-		for par in self.participants:
-			for asset in par.assets:
-				assets_all.append(asset)
-		participant_all = Participant(len(self.participants+2), assets_all)
-		P_demand = participant_all.nd_demand(self.t_ahead_0)
-
-		N_loads=len(self.participants)
-		# t in line 887
-		## include current in A, B
-		
-		C_max, C_min = np.zeros((self.T_market-self.t_ahead_0, N_loads)), np.zeros((self.T_market-self.t_ahead_0, N_loads))
-		for t in range(self.T_market-self.t_ahead_0):
-			print('t=',t+self.t_ahead_0)
-			####get linear parameters:
-			A_Pslack, b_Pslack, A_vlim, b_vlim, v_abs_min_vec, v_abs_max_vec, _, _, _ = network.get_linear_parameters(assets_all, t+self.t_ahead_0)#################
-			A_Pslack = np.expand_dims(A_Pslack, axis=0)     
-			A = np.concatenate((A_Pslack, -A_Pslack, A_vlim*1e3, -A_vlim*1e3), axis=0) 
-			B = np.concatenate( ([[Cfirm-(b_Pslack/1e3)]], [[Cfirm + (b_Pslack/1e3)]], v_abs_max_vec-np.expand_dims(b_vlim, axis=1), np.expand_dims(b_vlim, axis=1)-v_abs_min_vec), axis=0)
-
-			"""
-            A_clim, b_clim, i_abs_max_vec = np.array(A_ijlim[0]), np.array(b_ijlim[0]), np.array(i_abs_max[0]) #A, b current lim
-            for ij in range(1,len(A_ijlim)):
-                #stack all 
-                A_clim = np.concatenate((A_clim, A_ijlim[ij]), axis=0)
-                b_clim = np.concatenate((b_clim, b_ijlim[ij]), axis=0)
-                i_abs_max_vec = np.concatenate((i_abs_max_vec, i_abs_max[ij]), axis=0)
-
-            A = np.concatenate((A_Pslack, -A_Pslack, A_vlim*1e3, -A_vlim*1e3, A_clim*1e3), axis=0) 
-            B= np.concatenate( ([[Cap-(b_Pslack/1e3)]], [[Cap + (b_Pslack/1e3)]], \
-                                 v_abs_max_vec-np.expand_dims(b_vlim, axis=1), np.expand_dims(b_vlim, axis=1)-v_abs_min_vec), \
-                                 i_abs_max_vec-np.expand_dims(b_clim, axis=1),
-                                 axis=0)
-
-            """
-			sig = np.dot(np.dot(A,Sigma[t+self.t_ahead_0]),A.T)
-			sigm = np.expand_dims(np.sqrt(sig.diagonal()), axis=1) 
-
-			####Run stochastic optimisation
-			p1 = pic.Problem()
-
-			Cmax = pic.RealVariable("Cmax", N_loads)
-			Cmaxtot = pic.RealVariable('Cmaxtot')
-			p1.add_constraint(Cmax >= Cmaxtot)
-			p1.add_constraint(Cmaxtot>=0)
-			p1.add_constraint(A*Cmax <= B-np.expand_dims(np.dot(A,P_demand[t,:]), axis=1) - norm.ppf(1-eps)*sigm) #sigm #abs(np.expand_dims(np.dot(A,std[t]), axis=1)))
-			p1.set_objective('max', Cmaxtot)
-			p1.solve(solver='mosek', primals=None)
-
-			if p1.status != 'optimal':
-				print('p1 not optimal for t=',t+self.t_ahead_0)
-			else:
-				C_max[t, :] = np.array(Cmax.value)[:, 0]
-
-			p2 = pic.Problem()
-
-			Cmin = pic.RealVariable("Cmin", N_loads)
-			Cmintot = pic.RealVariable('Cmintot') 
-			p2.add_constraint(Cmin <= Cmintot)
-			p2.add_constraint(A*Cmin <= B-np.expand_dims(np.dot(A,P_demand[t,:]), axis=1) - norm.ppf(1-eps)*sigm) #sigm #abs(np.expand_dims(np.dot(A,std[t]), axis=1)))
-			p2.set_objective('min', Cmintot)
-
-			p2.solve(solver='mosek', primals=None)
-			if p2.status != 'optimal':
-				print('p2 not optimal for t=',t+self.t_ahead_0)
-			else:
-				C_min[t, :] = np.array(Cmin.value)[:, 0]
-
-		return C_max, C_min
