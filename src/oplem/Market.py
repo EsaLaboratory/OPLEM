@@ -567,6 +567,10 @@ class CED_market(Market):
 					crt +=1
 				elif asset.type == 'storage':
 					asset.update_ems(x[:self.T_market-self.t_ahead_0, flex]+ x[self.T_market-self.t_ahead_0:, flex], self.t_ahead_0, enforce_const=False)
+
+					schedules[p_idx].append(asset.Pnet_ems[self.t_ahead_0:])
+					sch = asset.Pnet_ems[self.t_ahead_0:]
+					flex +=1
 				elif asset.type == 'building':
 					asset.update_ems(x[:self.T_market-self.t_ahead_0, flex]- x[self.T_market-self.t_ahead_0:, flex], self.t_ahead_0, enforce_const=False)
 
@@ -1294,7 +1298,7 @@ class Capacity_limits(Market):
 		Market.__init__(self, participants, dt_market, T_market, price_imp, t_ahead_0=t_ahead_0, P_import=P_import, P_export=P_export, price_exp=price_exp, network=network)
 		### participants should have only assets with inflexible load, and one participant per node
 
-	def capacity_limits(epsilon, Cfirm, Sigma):
+	def capacity_limits(self, epsilon, Cfirm, Sigma):
 		"""
 		Returns the max capacities to absorb/inject per each node for each time step
 
