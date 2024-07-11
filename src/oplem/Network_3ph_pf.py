@@ -15,7 +15,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.linalg import block_diag
-import sys, os, time
+import os#, sys, time
 import copy
 import importlib.resources
 import warnings
@@ -474,7 +474,7 @@ class Network_3ph:
         """
 
         N_buses = self.N_buses
-        N_phases = self.N_phases
+        #N_phases = self.N_phases
 
         buses = []
         for asset in assets:
