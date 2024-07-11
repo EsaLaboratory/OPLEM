@@ -266,7 +266,7 @@ class BuildingAsset(Asset):
                 for t in range(int(t_ems*self.dt_ems/self.dt), int((t_ems+1)*self.dt_ems/self.dt)):
                     self._update_control_t(Pnet_ems[t_ems-t0], t, enforce_const)
 
-    def update_discrete(self, action, t, enforce_const=True):
+    def update_discrete(self, action, t0, enforce_const=True):
         """
         Update the power schedule with a discrete EMS signal
 
@@ -956,7 +956,7 @@ class StorageAsset(Asset):
             prob.set_objective('max', Flex)
 
             prob.solve(solver='mosek', primals=None)
-            p_ch_val = [p_ch.value[i] for i in range(T_horizon)]    
+            #p_ch_val = [p_ch.value[i] for i in range(T_horizon)]    
             return Flex.value #if Flex >= min_flex else 0
 
 
