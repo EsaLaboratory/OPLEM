@@ -916,7 +916,7 @@ class P2P_market(Market):
 			iterations+=1
 
 			if stopping_criterion!=None and iterations>=stopping_criterion:
-				mask = np.logical_or(np.isin(trade_list_ems[:,trades_seller_col],p2p_group_agent_indexes), np.isin(trade_list_ems[:,trades_buyer_col],p2p_group_agent_indexes))
+				mask = np.logical_or(trade_list_ems[:,trades_seller_col], trade_list_ems[:,trades_buyer_col])
 				trade_list_ems[mask, trades_tcost_col] = 1e5
 		
 		print('End negotiation')
