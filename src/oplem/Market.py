@@ -479,7 +479,7 @@ class CED_market(Market):
     				      )
 
 		print('Solving the program...')
-		prob.solve(solver='mosek', mosek_params={'MSK_IPAR_INFEAS_REPORT_AUTO': "MSK_ON"}, verbosity=1)
+		prob.solve(solver='mosek') #, mosek_params={'MSK_IPAR_INFEAS_REPORT_AUTO': "MSK_ON"}, verbosity=1)
 		print('Optimisation status:', prob.status, prob.value) 
 		
         ################################# Start DLMP computation  #######################################################################
