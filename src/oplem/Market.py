@@ -538,6 +538,7 @@ class CED_market(Market):
 					'dual_iline_max': dual_iline_max,
 					'dlmp': DLMP
 			       }
+			pickle.dump((DLMP), open( "Results\\Central\\DLMPs.p", "wb" ) )
 		###################################### END DLMP computation ############################################################
 
 		if len(participant_all.assets_flex):
