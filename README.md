@@ -5,7 +5,8 @@ Overview
 Energy System Architecture Lab ESAL's OPLEM is a tool for modelling and testing LEM designs. The platform combines distributed energy resource modelling (e.g. for PV generation sources, battery energy storage systems, electric vehicles), power flow simulation, multi-period optimisation for scheduling flexible energy resources, and offers a modular and flexible framework to create and test market designs adapted for distribution networks. OPLEM comes with the same features as [OPEN](https://github.com/EPGOxford/OPEN), which all combined cannot be found in existing tools, such as the multi-phase distribution network power flow, non-linear energy storage modelling, receding horizon and multi-period optimisation, separate models for control and simulation and the additional key feature of a generic market modelling that incorporates the common LEM designs and allows the user to develop their customised LEM designs.
 
 The key features of OPLEM are presented in:
-> insert paper info here when ready
+> Chaimaa Essayeh, Thomas Morstyn, OPLEM: Open Platform for Local Energy Markets, Applied Energy, Volume 373, 2024, 123848, ISSN 0306-2619, https://doi.org/10.1016/j.apenergy.2024.123848.
+
 
 Documentation
 -------------
