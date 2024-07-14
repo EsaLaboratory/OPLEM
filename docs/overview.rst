@@ -136,5 +136,5 @@ For academic and professional use, please provide attribution to the papers desc
 
 References
 ------------
-.. [1] tbc
+.. [1] Chaimaa Essayeh, Thomas Morstyn, "OPLEM: Open Platform for Local Energy Markets", Applied Energy, Volume 373, 2024, 123848, ISSN 0306-2619, https://doi.org/10.1016/j.apenergy.2024.123848.
 .. [2] T. Morstyn, A. Teytelboym and M. D. Mcculloch, "Bilateral Contract Networks for Peer-to-Peer Energy Trading," in IEEE Transactions on Smart Grid, vol. 10, no. 2, pp. 2026-2035, March 2019, doi: 10.1109/TSG.2017.2786668.
