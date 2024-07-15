@@ -963,6 +963,7 @@ class P2P_market(Market):
 					schedule.append(asset.Pnet_ems[self.t_ahead_0:])
 					#asset.Pnet_ems[self.t_ahead_0:] = asset.Pnet_ems[self.t_ahead_0:] - par_pref_output_final[i]['p_curt'][:, nd] 
 					nd+=1
+				else: schedule.append(asset.Pnet_ems[self.t_ahead_0:])
 			schedules.append(schedule)
 
 			### populate the last column of trade_list_ems to distinquish btw accepted and rejected trades
