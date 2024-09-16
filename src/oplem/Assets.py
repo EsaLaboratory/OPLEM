@@ -1054,11 +1054,8 @@ class NondispatchableAsset(Asset):
             slope and intercept
         """
 
-        A = np.concatenate((np.identity(self.T_ems-t0), np.identity(self.T_ems-t0)), axis=1)
-        if self.curt:
-            b= np.concatenate(([self.Pnet_ems[t0]], self.Pnet_ems_pred[t0+1:], np.zeros(self.T_ems-t0)), axis=0)
-        else: 
-            b= np.concatenate(([self.Pnet_ems[t0]], self.Pnet_ems_pred[t0+1:], [-self.Pnet_ems[t0]], -self.Pnet_ems_pred[t0+1:]), axis=0)
+        A = np.concatenate((np.identity(self.T_ems-t0), np.identity(self.T_ems-t0)), axis=1) 
+        b= np.concatenate(([self.Pnet_ems[t0]], self.Pnet_ems_pred[t0+1:], [-self.Pnet_ems[t0]], -self.Pnet_ems_pred[t0+1:]), axis=0)
 
         return (A,b)
 
