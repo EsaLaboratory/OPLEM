@@ -1082,7 +1082,7 @@ class CurtailableAsset(Asset):
     Curtailable Asset  
     """
 
-    def __init__(self, Pnet, Qnet, bus_id, dt, T, dt_ems, T_ems, phases=[0, 1, 2], Pnet_pred=None, Qnet_pred=None, curt=False, LoG='load'):
+    def __init__(self, Pnet, Qnet, bus_id, dt, T, dt_ems, T_ems, phases=[0, 1, 2], Pnet_pred=None, Qnet_pred=None, curt=1, LoG='load'):
         Asset.__init__(self, bus_id, dt, T, dt_ems, T_ems, phases=phases)
         self.Pnet = Pnet
         self.Qnet = Qnet
@@ -1182,7 +1182,8 @@ class CurtailableAsset(Asset):
         if self.curt:
             b= np.concatenate(([self.Pnet_ems[t0]], self.Pnet_ems_pred[t0+1:], np.zeros(self.T_ems-t0)), axis=0)
         else: 
-            b= np.concatenate(([self.Pnet_ems[t0]], self.Pnet_ems_pred[t0+1:], [-self.Pnet_ems[t0]], -self.Pnet_ems_pred[t0+1:]), axis=0)
+            b= np.concatenate(([self.Pnet_ems[t0]], self.Pnet_ems_pred[t0+1:], (1-curt)*[-self.Pnet_ems[t0]], -(1-curt)*self.Pnet_ems_pred[t0+1:]), axis=0) 
+            #curt~percentage of load that can be curtailed: curt=1 => full curtailment, curt=0 => ND asset
 
         return (A,b)
 
