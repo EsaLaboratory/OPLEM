@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "oplem"
+version = "0.0.1"
+description = "Open Platform for Local Energy Markets"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+  {name = "Chaimaa Essayeh", email = "chaimaa.essayeh@gmail.com"},
+]
+license = {file = "LICENSE.txt"}
+# See https://pypi.org/pypi?:action=list_classifiers for a full list
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "License :: OSI Approved :: Apache Software License"
+]
+
+dependencies = [
+     "cvxopt",
+     "matplotlib",
+     "mosek",
+     "notebook",
+     "numpy==1.*",
+     "openpyxl",
+     "pandapower",
+     "pandas",
+     "PICOS",
+     "scikit-learn",
+     "scipy"
+]
+
+[project.urls]
+github = "https://github.com/PSALOxford/OPLEM"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest-cov>=6.0.0",
+    "pytest>=8.3.2",
+]
