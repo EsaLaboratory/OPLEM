@@ -23,7 +23,7 @@ setup(
         'matplotlib',
         'mosek',
         'notebook',
-        'numpy',
+        'numpy<2.0',
         'openpyxl',
         'pandapower',
         'pandas',
